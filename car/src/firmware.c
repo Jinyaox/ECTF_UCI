@@ -18,6 +18,9 @@
 #include "feature_list.h"
 #include "uart.h"
 
+
+#include "aes.h"
+
 /*** Structure definitions ***/
 // Structure of start_car packet FEATURE_DATA
 typedef struct {
@@ -29,6 +32,8 @@ typedef struct {
 /*** Macro Definitions ***/
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
+#define SECREAT_KEY_LOC 0x4C0
+#define NOUNCE_EEPROM_LOC 0x3C0
 #define UNLOCK_EEPROM_SIZE 64
 #define TIMEOUT 100000
 
@@ -62,33 +67,43 @@ int main(void) {
   // Initialize board link UART
   setup_board_link();
 
+  //generate secret from EEPROM and overwrite
+  TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC)
+
   while (true) {
-    unlockCar();
+    unlockCar(s);
   }
 }
 
 /**
  * @brief Function that handles unlocking of car
  */
-void unlockCar(void) {
+void unlockCar(TCAesKeySched_t s) {
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
   message.buffer = buffer;
-  uint32_t nonce=
+  uint32_t nonce;
+  EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
 
   // Receive packet with some error checking
   receive_board_message_by_type(&message, UNLOCK_SYN);
 
-  //do decrption and extract the number
+  //do decrption and extract the number check if its valid
+  if(!decrypt_n_compare(message.buffer,s,nonce)){
+    sendAckFailure();
+    return;
+  };
 
   //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
+  //some fuction need to be written here <here>
 
   receive_board_message_by_type(&message, UNLOCK_FIN,100000);
 
-  //check the final and write to EEPROM if OK. 
-
-
+  if(!decrypt_n_compare(message.buffer,s,nonce+2)){
+    sendAckFailure();
+    return;
+  };
 
   // Pad payload to a string
   message.buffer[message.message_len] = 0;
@@ -97,12 +112,19 @@ void unlockCar(void) {
   if (!strcmp((char *)(message.buffer), (char *)pass)) {
 
     sendAckSuccess();
-
+    nonce=nonce+3;
+    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
     startCar();
+
+
   } else {
     sendAckFailure();
+    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
   }
 }
+
+
+
 
 /**
  * @brief Function that handles starting of car - feature list
@@ -138,7 +160,7 @@ void startCar(void) {
 /**
  * @brief Function to send successful ACK message
  */
-void sendAckSuccess(void) {
+void sendAckSuccess(void) { //this is a good final way to tell the fob to increase its counter
   // Create packet for successful ack and send
   MESSAGE_PACKET message;
 
