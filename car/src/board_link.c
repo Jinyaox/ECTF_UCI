@@ -47,7 +47,7 @@ void setup_board_link(void) {
 
   while (UARTCharsAvail(BOARD_UART)) {
     UARTCharGet(BOARD_UART);
-  }
+  } //this just clears the whole UART buffer initially
 }
 
 /**
@@ -96,10 +96,21 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
  * @param type the type of message to receive
  * @return uint32_t the number of bytes received
  */
-uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type) {
-  do {
-    receive_board_message(message);
-  } while (message->magic != type);
+uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout=0) {
+  if(!timeout){
+    do {
+      receive_board_message(message);
+    } while (message->magic != type);
+  }
+  else{
+    do {
+      receive_board_message(message);
+      timeout--;
+    } while ((message->magic != type)&&(timeout!=0));
+    if(message->magic != type){
+      message->message_len=-1;//basically saying not okay 
+    }
+  }
 
   return message->message_len;
 }

@@ -25,6 +25,9 @@
 #define ACK_MAGIC 0x54
 #define PAIR_MAGIC 0x55
 #define UNLOCK_MAGIC 0x56
+#define UNLOCK_SYN 0x50
+#define UNLOCK_ACK 0x51
+#define UNLOCK_FIN 0x52
 #define START_MAGIC 0x57
 #define BOARD_UART ((uint32_t)UART1_BASE)
 
@@ -70,5 +73,7 @@ uint32_t receive_board_message(MESSAGE_PACKET *message);
  * @return uint32_t the number of bytes received
  */
 uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type);
+
+
 
 #endif
