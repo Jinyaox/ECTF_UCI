@@ -20,8 +20,6 @@
 #include "inc/hw_memmap.h"
 
 #define ACK_SUCCESS 1
-#define ACK_FAIL 0
-
 #define ACK_MAGIC 0x54
 #define PAIR_MAGIC 0x55
 #define UNLOCK_MAGIC 0x56

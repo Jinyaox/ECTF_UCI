@@ -91,17 +91,17 @@ void unlockCar(TCAesKeySched_t s) {
 
   //do decrption and extract the number check if its valid
   if(!decrypt_n_compare(message.buffer,s,nonce)){
-    sendAckFailure();
+    sendAckFailure(nonce); //do we have to keep those, the success one? Or just timeout? 
     return;
   };
 
   //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
   //some fuction need to be written here <here>
 
-  receive_board_message_by_type(&message, UNLOCK_FIN,100000);
+  receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
 
   if(!decrypt_n_compare(message.buffer,s,nonce+2)){
-    sendAckFailure();
+    sendAckFailure(nonce);
     return;
   };
 
@@ -110,33 +110,36 @@ void unlockCar(TCAesKeySched_t s) {
 
   // If the data transfer is the password, unlock
   if (!strcmp((char *)(message.buffer), (char *)pass)) {
-
-    sendAckSuccess();
+    
     nonce=nonce+3;
+    sendAckSuccess(nonce);
     EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
+    //the fob needs to wait a bit before doing start car sending!!!
     startCar();
 
 
   } else {
-    sendAckFailure();
+    //we don't send the ACKFAIL in this case, can result in DDOS by unsync the two device. 
     EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
   }
 }
 
 
-
-
 /**
  * @brief Function that handles starting of car - feature list
  */
-void startCar(void) {
+void startCar(TCAesKeySched_t s) {
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
   message.buffer = buffer;
 
+
   // Receive start message
   receive_board_message_by_type(&message, START_MAGIC);
+
+  //decrypt the message buffer and compare everything (use their pre-made compare procedures)
+  tc_aes_decrypt(buffer,buffer,s);
 
   FEATURE_DATA *feature_info = (FEATURE_DATA *)buffer;
 
@@ -160,30 +163,17 @@ void startCar(void) {
 /**
  * @brief Function to send successful ACK message
  */
-void sendAckSuccess(void) { //this is a good final way to tell the fob to increase its counter
+void sendAckSuccess(uint32_t nonce;) { //this is a good final way to tell the fob to increase its counter
   // Create packet for successful ack and send
-  MESSAGE_PACKET message;
+  // also needs to encrypt the buffer message. 
 
-  uint8_t buffer[1];
+  MESSAGE_PACKET message;
+  //encrypt nonce and send it off for future sync
+
+  uint8_t buffer[32];
   message.buffer = buffer;
   message.magic = ACK_MAGIC;
   buffer[0] = ACK_SUCCESS;
-  message.message_len = 1;
-
-  send_board_message(&message);
-}
-
-/**
- * @brief Function to send unsuccessful ACK message
- */
-void sendAckFailure(void) {
-  // Create packet for unsuccessful ack and send
-  MESSAGE_PACKET message;
-
-  uint8_t buffer[1];
-  message.buffer = buffer;
-  message.magic = ACK_MAGIC;
-  buffer[0] = ACK_FAIL;
   message.message_len = 1;
 
   send_board_message(&message);

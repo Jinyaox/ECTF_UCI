@@ -135,5 +135,4 @@ bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t expe
   tc_aes_decrypt(buffer,in,s);
   uint32_t res = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
   return res==expected;
-
 }
