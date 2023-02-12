@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
@@ -72,6 +73,9 @@ uint32_t send_board_message(MESSAGE_PACKET *message) {
   return message->message_len;
 }
 
+
+
+
 /**
  * @brief Receive a message between boards
  *
@@ -94,6 +98,9 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
   return message->message_len;
 }
 
+
+
+
 /**
  * @brief Function that retreives messages until the specified message is found
  *
@@ -101,8 +108,8 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
  * @param type the type of message to receive
  * @return uint32_t the number of bytes received
  */
-uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout=0) {
-  if(!timeout){
+uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout) {
+  if(timeout<0){
     do {
       receive_board_message(message);
     } while (message->magic != type);
@@ -116,9 +123,12 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, ui
       message->message_len=-1;//basically saying not okay 
     }
   }
-
   return message->message_len;
 }
+
+
+
+// here below are helper functions written by Jinyao
 
 TCAesKeySched_t generate_encrypt_key(uint32_t secret_loc){
   //NUM_OF_NIST_KEYS 16 extracting 16 bytes from the secret location
@@ -129,10 +139,28 @@ TCAesKeySched_t generate_encrypt_key(uint32_t secret_loc){
   return s;
 }
 
-bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t expected){
+void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce, uint8_t type){
+  MESSAGE_PACKET message;
+  uint8_t buffer[128];
+  message.buffer = buffer;
+  memset(message.buffer,0,128);
+  message.magic = type;
+  EEPROMRead((uint32_t *) message.buffer, secret_loc , 64); //64 is the unlock eeprom size
+  uint8_t *arr=(uint8_t*) &nonce;
+  message.buffer[64]=arr[0]; message.buffer[65]=arr[1]; message.buffer[66]=arr[2]; message.buffer[67]=arr[3];
+  tc_aes_encrypt(message.buffer,message.buffer, s);
+
+  message.message_len=strlen(message.buffer);
+
+  send_board_message(&message);
+}
+
+bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t secret_loc, uint32_t nonce){
   uint8_t buffer[256];
   memset(buffer,0,256);
-  tc_aes_decrypt(buffer,in,s);
-  uint32_t res = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
-  return res==expected;
+  uint8_t *arr=(uint8_t*) &nonce;
+  EEPROMRead((uint32_t *) buffer, secret_loc , 64); //64 is the unlock eeprom size
+  buffer[64]=arr[0]; buffer[65]=arr[1]; buffer[66]=arr[2]; buffer[67]=arr[3];
+  tc_aes_decrypt(in,in,s);
+  return strcmp(buffer,in)==0;
 }

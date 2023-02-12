@@ -46,7 +46,7 @@ void startCar(void);
 void sendAckSuccess(void);
 void sendAckFailure(void);
 
-// Declare password
+// Declare password (Hey Kush can you figure out where these two things come into play?)
 const uint8_t pass[] = PASSWORD;
 const uint8_t car_id[] = CAR_ID;
 
@@ -67,61 +67,52 @@ int main(void) {
   // Initialize board link UART
   setup_board_link();
 
-  //generate secret from EEPROM and overwrite
-  TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC)
-
   while (true) {
-    unlockCar(s);
+    unlockCar();
   }
 }
 
 /**
  * @brief Function that handles unlocking of car
  */
-void unlockCar(TCAesKeySched_t s) {
+void unlockCar() {
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
   message.buffer = buffer;
   uint32_t nonce;
   EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
+  TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
+  memset(message.buffer,0,256);
 
   // Receive packet with some error checking
-  receive_board_message_by_type(&message, UNLOCK_SYN);
+  receive_board_message_by_type(&message, UNLOCK_SYN,-1);
 
   //do decrption and extract the number check if its valid
-  if(!decrypt_n_compare(message.buffer,s,nonce)){
-    sendAckFailure(nonce); //do we have to keep those, the success one? Or just timeout? 
+  if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce)){
     return;
   };
+  memset(message.buffer,0,256);
 
   //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
-  //some fuction need to be written here <here>
+  encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce+1, UNLOCK_ACK);
+  memset(message.buffer,0,256);
 
+  //receive the final message for unlock
   receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
 
-  if(!decrypt_n_compare(message.buffer,s,nonce+2)){
-    sendAckFailure(nonce);
-    return;
-  };
-
-  // Pad payload to a string
-  message.buffer[message.message_len] = 0;
-
-  // If the data transfer is the password, unlock
-  if (!strcmp((char *)(message.buffer), (char *)pass)) {
-    
-    nonce=nonce+3;
-    sendAckSuccess(nonce);
-    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
-    //the fob needs to wait a bit before doing start car sending!!!
-    startCar();
-
-
-  } else {
-    //we don't send the ACKFAIL in this case, can result in DDOS by unsync the two device. 
+  if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce+2)){
+    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce, ACK_FAIL);
     EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
   }
+  else{//it works unlock
+    nonce=nonce+3;
+    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4);
+    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
+    memset(message.buffer,0,256);
+    startCar();
+  }
+  memset(message.buffer,0,256);
 }
 
 
@@ -135,8 +126,8 @@ void startCar(TCAesKeySched_t s) {
   message.buffer = buffer;
 
 
-  // Receive start message
-  receive_board_message_by_type(&message, START_MAGIC);
+  // Receive start message but with a time out!!
+  receive_board_message_by_type(&message, START_MAGIC,TIMEOUT);
 
   //decrypt the message buffer and compare everything (use their pre-made compare procedures)
   tc_aes_decrypt(buffer,buffer,s);
@@ -158,23 +149,4 @@ void startCar(TCAesKeySched_t s) {
 
     uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
   }
-}
-
-/**
- * @brief Function to send successful ACK message
- */
-void sendAckSuccess(uint32_t nonce;) { //this is a good final way to tell the fob to increase its counter
-  // Create packet for successful ack and send
-  // also needs to encrypt the buffer message. 
-
-  MESSAGE_PACKET message;
-  //encrypt nonce and send it off for future sync
-
-  uint8_t buffer[32];
-  message.buffer = buffer;
-  message.magic = ACK_MAGIC;
-  buffer[0] = ACK_SUCCESS;
-  message.message_len = 1;
-
-  send_board_message(&message);
 }
