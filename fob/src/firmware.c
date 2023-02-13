@@ -1,17 +1,3 @@
-/**
- * @file main.c
- * @author Frederich Stine
- * @brief eCTF Fob Example Design Implementation
- * @date 2023
- *
- * This source file is part of an example system for MITRE's 2023 Embedded
- * System CTF (eCTF). This code is being provided only for educational purposes
- * for the 2023 MITRE eCTF competition, and may not meet MITRE standards for
- * quality. Use this code at your own risk!
- *
- * @copyright Copyright (c) 2023 The MITRE Corporation
- */
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -45,6 +31,14 @@
       : sizeof(FLASH_DATA) + (4 - (sizeof(FLASH_DATA) % 4))
 #define FLASH_PAIRED 0x00
 #define FLASH_UNPAIRED 0xFF
+
+/*** Macro Definitions ***/
+// Definitions for unlock message location in EEPROM
+#define UNLOCK_EEPROM_LOC 0x7C0
+#define SECREAT_KEY_LOC 0x4C0
+#define NOUNCE_EEPROM_LOC 0x3C0
+#define UNLOCK_EEPROM_SIZE 64
+#define TIMEOUT 100000
 
 /*** Structure definitions ***/
 // Defines a struct for the format of an enable message
@@ -320,11 +314,30 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
+    // Sending Initial Message to board
     MESSAGE_PACKET message;
-    message.message_len = 6;
-    message.magic = UNLOCK_MAGIC;
-    message.buffer = fob_state_ram->pair_info.password;
-    send_board_message(&message);
+    uint8_t buffer[256];
+    message.buffer = buffer;
+    uint32_t nonce;
+    EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
+    TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
+    encrypt_n_send(message.buffer,s,UNLOCK_EEPROM_LOC,nonce);
+
+
+    memset(message.buffer,0,256);
+    // Receive packet with some error checking
+    receive_board_message_by_type(&message, UNLOCK_SYN,-1);
+
+    // Compare received message ++
+    if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce +1)){
+      return;
+    };
+
+    // Not sure how to send the last message
+    memset(message.buffer,0,256);
+    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce+2, UNLOCK_ACK); //What is UNLOCK_ACK (unlock acknowledgement?) do we add it to our boardlink too?
+    nonce=nonce+3;
+
   }
 }
 
