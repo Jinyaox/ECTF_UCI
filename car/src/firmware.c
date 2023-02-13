@@ -110,13 +110,13 @@ void unlockCar() {
   //receive the final message for unlock
   receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
 
-  if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce+2)){
+  if(!decrypt_n_compare(message.buffer,s,SECREAT_KEY_LOC,nonce+2)){
     encrypt_n_send(SECREAT_KEY_LOC, s, nonce, ACK_FAIL);
     memset(message.buffer,0,256);
   }
   else{//it works unlock
     nonce=nonce+3;
-    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
+    encrypt_n_send(SECREAT_KEY_LOC s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
     if(car==0){
       EEPROMProgram(&nonce, NOUNCE1_EEPROM_LOC , 4); //last arg must be multip of 4
     }

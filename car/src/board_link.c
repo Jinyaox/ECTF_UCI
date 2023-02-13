@@ -145,7 +145,7 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
   message.buffer = buffer;
   memset(message.buffer,0,128);
   message.magic = type;
-  EEPROMRead((uint32_t *) message.buffer, secret_loc , 64); //64 is the unlock eeprom size
+  EEPROMRead((uint32_t *) message.buffer, secret_loc , 16);
   uint8_t *arr=(uint8_t*) &nonce;
   buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
   tc_aes_encrypt(message.buffer,message.buffer, s);
@@ -157,17 +157,8 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
 
 bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t secret_loc, uint32_t nonce){
   uint8_t buffer[256];
-  bool type;
   memset(buffer,0,256);
   tc_aes_decrypt(in,in,s);
-  if((bool) in[0]){
-    nonce=*nonce1; //64 is the unlock eeprom size
-    type=0;
-  }
-  else{
-    nonce=*nonce2; //64 is the unlock eeprom size
-    type=1;
-  }
   uint8_t *arr=(uint8_t*) &nonce;
   EEPROMRead((uint32_t *) buffer, secret_loc , 16); //64 is the unlock eeprom size
   buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
