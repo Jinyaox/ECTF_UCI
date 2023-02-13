@@ -145,6 +145,7 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
   message.buffer = buffer;
   memset(message.buffer,0,128);
   message.magic = type;
+  message.dev=0; //0 is always the car from fob side, just to keep a coherency
   EEPROMRead((uint32_t *) message.buffer, secret_loc , 16);
   uint8_t *arr=(uint8_t*) &nonce;
   buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
