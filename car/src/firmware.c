@@ -33,7 +33,8 @@ typedef struct {
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
 #define SECREAT_KEY_LOC 0x4C0
-#define NOUNCE_EEPROM_LOC 0x3C0
+#define NOUNCE1_EEPROM_LOC 0x3C0
+#define NOUNCE2_EEPROM_LOC 0x2C0
 #define UNLOCK_EEPROM_SIZE 64
 #define TIMEOUT 100000
 
@@ -79,40 +80,52 @@ void unlockCar() {
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
-  message.buffer = buffer;
   uint32_t nonce;
-  EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
+  bool car;
+  message.buffer = buffer;
   TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
   memset(message.buffer,0,256);
 
   // Receive packet with some error checking
   receive_board_message_by_type(&message, UNLOCK_SYN,-1);
+  if(message.dev==0){
+    nonce=EEPROMRead((uint32_t *) nonce, NOUNCE1_EEPROM_LOC , 4);
+    car=0;
+  }
+  else{
+    nonce=EEPROMRead((uint32_t *) nonce, NOUNCE2_EEPROM_LOC , 4);
+    car=1;
+  }
 
   //do decrption and extract the number check if its valid
-  if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce)){
+  if(!decrypt_n_compare(message.buffer,s,SECREAT_KEY_LOC,nonce)){
     return;
   };
   memset(message.buffer,0,256);
 
   //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
-  encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce+1, UNLOCK_ACK);
+  encrypt_n_send(SECREAT_KEY_LOC, s, nonce+1, UNLOCK_ACK);
   memset(message.buffer,0,256);
 
   //receive the final message for unlock
   receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
 
   if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce+2)){
-    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce, ACK_FAIL);
-    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
+    encrypt_n_send(SECREAT_KEY_LOC, s, nonce, ACK_FAIL);
+    memset(message.buffer,0,256);
   }
   else{//it works unlock
     nonce=nonce+3;
-    EEPROMProgram(&nonce, NOUNCE_EEPROM_LOC , 4);
     encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
+    if(car==0){
+      EEPROMProgram(&nonce, NOUNCE1_EEPROM_LOC , 4); //last arg must be multip of 4
+    }
+    else{
+      EEPROMProgram(&nonce, NOUNCE2_EEPROM_LOC , 4); //last arg must be multip of 4
+    }
     memset(message.buffer,0,256);
     startCar();
   }
-  memset(message.buffer,0,256);
 }
 
 

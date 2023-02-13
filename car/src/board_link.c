@@ -88,7 +88,7 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
   if (message->magic == 0) {
     return 0;
   }
-
+  message->dev = (uint8_t)UARTCharGet(BOARD_UART);
   message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
 
   for (int i = 0; i < message->message_len; i++) {
@@ -147,7 +147,7 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
   message.magic = type;
   EEPROMRead((uint32_t *) message.buffer, secret_loc , 64); //64 is the unlock eeprom size
   uint8_t *arr=(uint8_t*) &nonce;
-  message.buffer[64]=arr[0]; message.buffer[65]=arr[1]; message.buffer[66]=arr[2]; message.buffer[67]=arr[3];
+  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
   tc_aes_encrypt(message.buffer,message.buffer, s);
 
   message.message_len=strlen(message.buffer);
@@ -157,10 +157,20 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
 
 bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t secret_loc, uint32_t nonce){
   uint8_t buffer[256];
+  bool type;
   memset(buffer,0,256);
-  uint8_t *arr=(uint8_t*) &nonce;
-  EEPROMRead((uint32_t *) buffer, secret_loc , 64); //64 is the unlock eeprom size
-  buffer[64]=arr[0]; buffer[65]=arr[1]; buffer[66]=arr[2]; buffer[67]=arr[3];
   tc_aes_decrypt(in,in,s);
+  if((bool) in[0]){
+    nonce=*nonce1; //64 is the unlock eeprom size
+    type=0;
+  }
+  else{
+    nonce=*nonce2; //64 is the unlock eeprom size
+    type=1;
+  }
+  uint8_t *arr=(uint8_t*) &nonce;
+  EEPROMRead((uint32_t *) buffer, secret_loc , 16); //64 is the unlock eeprom size
+  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
+  
   return strcmp(buffer,in)==0;
 }
