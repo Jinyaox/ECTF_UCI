@@ -120,6 +120,10 @@ ${COMPILER}/firmware.axf: ${COMPILER}/firmware.o
 ${COMPILER}/firmware.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/firmware.axf: ${TIVA_ROOT}/driverlib/${COMPILER}/libdriver.a
 
+${COMPILER}/firmware.axf: ${COMPILER}/aes_decrypt.o 
+${COMPILER}/firmware.axf: ${COMPILER}/aes_encrypt.o
+${COMPILER}/firmware.axf: ${COMPILER}/utils.o
+
 copy_artifacts:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}

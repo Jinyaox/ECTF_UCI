@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "inc/hw_memmap.h"
+#include "aes.h"
 
 #define ACK_SUCCESS 1
 #define ACK_FAIL 0
@@ -72,8 +73,12 @@ uint32_t receive_board_message(MESSAGE_PACKET *message);
  * @param type the type of message to receive
  * @return uint32_t the number of bytes received
  */
-uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type);
+uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type,uint32_t timeout);
 
 
+//helper functions defined by JINYAO (Compile Ready)
+void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc);
+void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type);
+bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce);
 
 #endif

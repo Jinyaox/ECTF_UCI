@@ -14,20 +14,18 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_uart.h"
 
+#include "driverlib/eeprom.h"
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
-
 #include "board_link.h"
-
 
 //Encryption library including
 #include "aes.h"
@@ -127,19 +125,19 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, ui
 }
 
 
-
+//----------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------
 // here below are helper functions written by Jinyao
 
-TCAesKeySched_t generate_encrypt_key(uint32_t secret_loc){
+void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc){
   //NUM_OF_NIST_KEYS 16 extracting 16 bytes from the secret location
   uint8_t nist_key[16];
-  TCAesKeySched_t s;
   EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
-  tc_aes128_set_encrypt_key(&s, nist_key);
-  return s;
+  tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce, uint8_t type){
+void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type){
   MESSAGE_PACKET message;
   uint8_t buffer[128];
   message.buffer = buffer;
@@ -151,12 +149,12 @@ void encrypt_n_send(uint32_t secret_loc, const TCAesKeySched_t s, uint32_t nonce
   buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
   tc_aes_encrypt(message.buffer,message.buffer, s);
 
-  message.message_len=strlen(message.buffer);
+  message.message_len=strlen((const char*)message.buffer);
 
   send_board_message(&message);
 }
 
-bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t secret_loc, uint32_t nonce){
+bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
   uint8_t buffer[256];
   memset(buffer,0,256);
   tc_aes_decrypt(in,in,s);
@@ -164,5 +162,5 @@ bool decrypt_n_compare(const uint8_t *in, const TCAesKeySched_t s, uint32_t secr
   EEPROMRead((uint32_t *) buffer, secret_loc , 16); //64 is the unlock eeprom size
   buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
   
-  return strcmp(buffer,in)==0;
+  return strcmp((const char*)buffer,(const char*)in)==0;
 }
