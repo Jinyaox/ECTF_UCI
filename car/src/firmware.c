@@ -32,7 +32,7 @@ typedef struct {
 /*** Macro Definitions ***/
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
-#define SECREAT_KEY_LOC 0x4C0
+#define SECRET_KEY_LOC 0x4C0
 #define NOUNCE1_EEPROM_LOC 0x3C0
 #define NOUNCE2_EEPROM_LOC 0x2C0
 #define UNLOCK_EEPROM_SIZE 64
@@ -83,11 +83,11 @@ void unlockCar() {
   uint32_t nonce;
   bool car;
   message.buffer = buffer;
-  TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
+  TCAesKeySched_t s=generate_encrypt_key(SECRET_KEY_LOC);
   memset(message.buffer,0,256);
 
   // Receive packet with some error checking
-  receive_board_message_by_type(&message, UNLOCK_SYN,-1);
+  receive_board_message_by_type(&message, UNLOCK_SYN,-1); // Conversation started by the pair fob
   if(message.dev==0){
     nonce=EEPROMRead((uint32_t *) nonce, NOUNCE1_EEPROM_LOC , 4);
     car=0;
@@ -98,25 +98,25 @@ void unlockCar() {
   }
 
   //do decrption and extract the number check if its valid
-  if(!decrypt_n_compare(message.buffer,s,SECREAT_KEY_LOC,nonce)){
+  if(!decrypt_n_compare(message.buffer,s,SECRET_KEY_LOC,nonce)){ // compare the nonce from the fob
     return;
   };
   memset(message.buffer,0,256);
 
   //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
-  encrypt_n_send(SECREAT_KEY_LOC, s, nonce+1, UNLOCK_ACK);
+  encrypt_n_send(SECRET_KEY_LOC, s, nonce+1, UNLOCK_ACK); // Send the next nonce in the series to the fob
   memset(message.buffer,0,256);
 
   //receive the final message for unlock
-  receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
+  receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT); // Receive the unlock car command + nonce 
 
-  if(!decrypt_n_compare(message.buffer,s,SECREAT_KEY_LOC,nonce+2)){
-    encrypt_n_send(SECREAT_KEY_LOC, s, nonce, ACK_FAIL);
+  if(!decrypt_n_compare(message.buffer,s,SECRET_KEY_LOC,nonce+2)){
+    encrypt_n_send(SECRET_KEY_LOC, s, nonce, ACK_FAIL);
     memset(message.buffer,0,256);
   }
   else{//it works unlock
     nonce=nonce+3;
-    encrypt_n_send(SECREAT_KEY_LOC s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
+    encrypt_n_send(SECRET_KEY_LOC s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
     if(car==0){
       EEPROMProgram(&nonce, NOUNCE1_EEPROM_LOC , 4); //last arg must be multip of 4
     }

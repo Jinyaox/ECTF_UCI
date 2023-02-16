@@ -108,7 +108,7 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
  * @param type the type of message to receive
  * @return uint32_t the number of bytes received
  */
-uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout) {
+uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, int timeout) {
   if(timeout<0){
     do {
       receive_board_message(message);
