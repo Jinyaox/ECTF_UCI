@@ -14,7 +14,7 @@
 
 import json
 import argparse
-import secrets #a secret.py lib, see documentation https://docs.python.org/3/library/secrets.html#secrets.token_bytes
+import random, string
 from pathlib import Path
 
 
@@ -28,20 +28,21 @@ def main():
 
     # Open the secret file if it exists
     # if args.secret_file.exists():
+    #     print(args.secret_file)
     #     with open(args.secret_file, "r") as fp:
     #         secret = json.load(fp)
     # else:
     secret = {}
     
     #generate an actual secret stored in EEPROM for encryption and decription 
-    car_secret = secrets.token_bytes(16)
+    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     secret[str(args.car_id)] = car_secret
     #define a secret's dummy location (0x0) in EEPROM
     location=0x0
 
     # Save the secret file
-    # with open(args.secret_file, "w") as fp:
-    #     json.dump(secret, fp, indent=4)
+    with open(args.secret_file, "w") as fp:
+        json.dump(secret, fp, indent=4)
 
     # Write to header file
     with open(args.header_file, "w") as fp:
