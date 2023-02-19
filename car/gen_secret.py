@@ -51,7 +51,7 @@ def main():
         fp.write("#ifndef __CAR_SECRETS__\n")
         fp.write("#define __CAR_SECRETS__\n\n")
         fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
-        fp.write(f"#define CAR_SECRET_LOC {nonce_location}\n\n")
+        fp.write(f"#define CAR_NONCE_LOC {nonce_location}\n\n")
         fp.write(f'#define CAR_ID "{args.car_id}"\n\n')
         fp.write('#define PASSWORD "unlock"\n\n') #no idea what this is used for
         fp.write("#endif\n")

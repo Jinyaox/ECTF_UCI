@@ -31,7 +31,7 @@ typedef struct {
 /*** Macro Definitions ***/
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
-#define SECREAT_KEY_LOC 0x4C0
+#define SECREAT_KEY_LOC 0x4C0 //these need to be changed
 #define NOUNCE1_EEPROM_LOC 0x3C0
 #define NOUNCE2_EEPROM_LOC 0x2C0
 #define UNLOCK_EEPROM_SIZE 64
