@@ -139,10 +139,15 @@ ${COMPILER}/firmware.axf: ${COMPILER}/firmware.o
 ${COMPILER}/firmware.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/firmware.axf: ${TIVA_ROOT}/driverlib/${COMPILER}/libdriver.a
 
+# uncomment the following codes when fob finished
+# ${COMPILER}/firmware.axf: ${COMPILER}/aes_decrypt.o 
+# ${COMPILER}/firmware.axf: ${COMPILER}/aes_encrypt.o
+# ${COMPILER}/firmware.axf: ${COMPILER}/utils.o
+
 copy_artifacts:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
-	cp ${SECRETS_DIR}/global_secrets.txt ${EEPROM_PATH}
+	cp ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${EEPROM_PATH}
 
 SCATTERgcc_firmware=${TIVA_ROOT}/firmware.ld
 ENTRY_firmware=Firmware_Startup
