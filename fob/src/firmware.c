@@ -18,10 +18,10 @@
 #include "board_link.h"
 #include "feature_list.h"
 #include "uart.h"
+#include "aes.h"
 
 // this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
 #ifdef EXAMPLE_AES
-#include "aes.h"
 #endif
 
 #define FOB_STATE_PTR 0x3FC00
@@ -319,9 +319,9 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     uint8_t buffer[256];
     message.buffer = buffer;
     uint32_t nonce;
-    EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
-    TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
-    encrypt_n_send(message.buffer,s,UNLOCK_EEPROM_LOC,nonce);
+    struct tc_aes_key_sched_struct s;
+    generate_encrypt_key(&s, CAR_SECRET_LOC);
+    encrypt_n_send(CAR_SECRET_LOC, &s, nonce+1, UNLOCK_MAGIC);
 
 
     memset(message.buffer,0,256);
