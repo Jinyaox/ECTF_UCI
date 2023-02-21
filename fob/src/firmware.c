@@ -314,30 +314,59 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    // Sending Initial Message to board
+    
+    // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
     uint8_t buffer[256];
     message.buffer = buffer;
     uint32_t nonce;
+    bool fob;
     struct tc_aes_key_sched_struct s;
     generate_encrypt_key(&s, CAR_SECRET_LOC);
-    encrypt_n_send(CAR_SECRET_LOC, &s, nonce+1, UNLOCK_MAGIC);
+
+    // Sending Initial Message to board
+    encrypt_n_send(CAR_SECRET_LOC, &s, nonce, UNLOCK_SYN);
 
 
     memset(message.buffer,0,256);
     // Receive packet with some error checking
-    receive_board_message_by_type(&message, UNLOCK_SYN,-1);
+    receive_board_message_by_type(&message, UNLOCK_ACK,-1);
+    if(message.dev==0){
+      EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
+      fob=0;
+    }
+    else{
+      EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
+      fob=1;
+    }
 
     // Compare received message ++
-    if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce +1)){
+    if(!decrypt_n_compare(message.buffer,s,CAR_SECRET_LOC,nonce +1)){
       return;
     };
 
-    // Not sure how to send the last message
-    memset(message.buffer,0,256);
-    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce+2, UNLOCK_ACK); //What is UNLOCK_ACK (unlock acknowledgement?) do we add it to our boardlink too?
+    // Send final message
+    encrypt_n_send(CAR_SECRET_LOC, s, nonce+2, UNLOCK_FIN);
     nonce=nonce+3;
 
+    memset(message.buffer,0,256);
+    // Receive Success/Failure message
+    receive_board_message_by_type(&message,ACK_SUCCESS,TIMEOUT) //IDK how to recieve ack_fail
+
+    if(!decrypt_n_compare(message.buffer,&s,CAR_SECRET_LOC,nonce+3)){
+      return // I dont know what to do if the ACK_SUCCESS doesnt match
+    }
+    else{
+      nonce=nonce+3; // How do I update nonce in EEPROMP
+      if(car==0){
+        EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
+      }
+      else{
+        EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
+      }
+      memset(message.buffer,0,256);
+      startCar(); //Need to add an argument
+    }
   }
 }
 
@@ -354,7 +383,7 @@ void startCar(FLASH_DATA *fob_state_ram)
     message.magic = START_MAGIC;
     message.message_len = sizeof(FEATURE_DATA);
     message.buffer = (uint8_t *)&fob_state_ram->feature_info;
-    send_board_message(&message);
+    encrypt_n_send(&message);
   }
 }
 
