@@ -19,10 +19,8 @@
 #include "feature_list.h"
 #include "uart.h"
 
-// this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
-#ifdef EXAMPLE_AES
+
 #include "aes.h"
-#endif
 
 #define FOB_STATE_PTR 0x3FC00
 #define FLASH_DATA_SIZE         \
@@ -294,27 +292,11 @@ void unlockCar(FLASH_DATA *fob_state_ram)
   {
     // Sending Initial Message to board
     MESSAGE_PACKET message;
-    uint8_t buffer[256];
+    char buffer[256];
     message.buffer = buffer;
-    uint32_t nonce;
-    EEPROMRead(&nonce, NOUNCE_EEPROM_LOC , 4); //last arg must be multip of 4
-    TCAesKeySched_t s=generate_encrypt_key(SECREAT_KEY_LOC);
+    struct tc_aes_key_sched_struct s;
+    generate_encrypt_key(&s, SECREAT_KEY_LOC);
     encrypt_n_send(message.buffer,s,UNLOCK_EEPROM_LOC,nonce);
-
-
-    memset(message.buffer,0,256);
-    // Receive packet with some error checking
-    receive_board_message_by_type(&message, UNLOCK_SYN,-1);
-
-    // Compare received message ++
-    if(!decrypt_n_compare(message.buffer,s,UNLOCK_EEPROM_LOC,nonce +1)){
-      return;
-    };
-
-    // Not sure how to send the last message
-    memset(message.buffer,0,256);
-    encrypt_n_send(UNLOCK_EEPROM_LOC, s, nonce+2, UNLOCK_ACK); //What is UNLOCK_ACK (unlock acknowledgement?) do we add it to our boardlink too?
-    nonce=nonce+3;
 
   }
 }
@@ -345,20 +327,4 @@ void saveFobState(FLASH_DATA *flash_data)
 {
   FlashErase(FOB_STATE_PTR);
   FlashProgram((uint32_t *)flash_data, FOB_STATE_PTR, FLASH_DATA_SIZE);
-}
-
-/**
- * @brief Function that receives an ack and returns whether ack was
- * success/failure
- *
- * @return uint8_t Ack success/failure
- */
-uint8_t receiveAck()
-{
-  MESSAGE_PACKET message;
-  uint8_t buffer[255];
-  message.buffer = buffer;
-  receive_board_message_by_type(&message, ACK_MAGIC);
-
-  return message.buffer[0];
 }

@@ -26,6 +26,9 @@
 
 #include "board_link.h"
 
+//Encryption library including
+#include "aes.h"
+
 /**
  * @brief Set the up board link object
  *
@@ -102,4 +105,12 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type) {
   } while (message->magic != type);
 
   return message->message_len;
+}
+
+
+void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc){
+  //NUM_OF_NIST_KEYS 16 extracting 16 bytes from the secret location
+  uint8_t nist_key[16];
+  EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
+  tc_aes128_set_encrypt_key(s, nist_key);
 }
