@@ -35,7 +35,7 @@ def main():
     secret = {}
     
     #generate an actual secret stored in EEPROM for encryption and decription 
-    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
     secret[str(args.car_id)] = car_secret
 
     sec_location=0x0

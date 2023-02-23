@@ -83,7 +83,6 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
   if (message->magic == 0) {
     return 0;
   }
-  message->dev = (uint8_t)UARTCharGet(BOARD_UART);
   message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
 
   for (int i = 0; i < message->message_len; i++) {

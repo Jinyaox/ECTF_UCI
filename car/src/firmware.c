@@ -36,11 +36,13 @@ typedef struct {
 /*** Function definitions ***/
 // Core functions - unlockCar and startCar
 void unlockCar(void);
-void startCar(struct tc_aes_key_sched_struct* s);
+void startCar(char* buffer);
 
 // Declare password
 const uint8_t pass[] = PASSWORD;
 const uint8_t car_id[] = CAR_ID;
+
+uint32_t nonce;
 
 /**
  * @brief Main function for the car example
@@ -52,7 +54,6 @@ int main(void) {
   // Ensure EEPROM peripheral is enabled
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   EEPROMInit();
-  uint32_t nonce;
 
   // Initialize UART peripheral
   uart_init();
@@ -61,9 +62,9 @@ int main(void) {
   setup_board_link();
 
   while (true) {
-    uint8_t *arr[8]; memset(arr,0,8);
-    strncpy(arr,(uint8_t*) &nonce,4);
-    regular_send(char* arr,uint8_t type);
+    char arr[8]; memset(arr,0,8);
+    strncpy(arr,(char*) &nonce,4);
+    regular_send(arr,NONCE_MAGIC);
     nonce++; //this is just a stub for debugging
     unlockCar();
   }
@@ -86,9 +87,9 @@ void unlockCar() {
 
   receive_board_message_by_type(&message, UNLOCK, TIMEOUT);
   generate_encrypt_key(&s, CAR_SECRET_LOC);
-  if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID)){
+  if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID,nonce)){
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
-    startCar(buffer+20);
+    startCar((char*) buffer+20);
   }
   else{
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
