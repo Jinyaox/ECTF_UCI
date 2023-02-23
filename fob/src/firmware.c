@@ -125,28 +125,6 @@ int main(void)
   // Initialize UART
   uart_init();
 
-#ifdef EXAMPLE_AES
-  // -------------------------------------------------------------------------
-  // example encryption using tiny-AES-c
-  // -------------------------------------------------------------------------
-  struct AES_ctx ctx;
-  uint8_t key[16] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
-                     0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
-  uint8_t plaintext[16] = "0123456789abcdef";
-
-  // initialize context
-  AES_init_ctx(&ctx, key);
-
-  // encrypt buffer (encryption happens in place)
-  AES_ECB_encrypt(&ctx, plaintext);
-
-  // decrypt buffer (decryption happens in place)
-  AES_ECB_decrypt(&ctx, plaintext);
-  // -------------------------------------------------------------------------
-  // end example
-  // -------------------------------------------------------------------------
-#endif
-
   // Initialize board link UART
   setup_board_link();
 

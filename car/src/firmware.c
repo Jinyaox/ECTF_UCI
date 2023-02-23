@@ -32,14 +32,13 @@ typedef struct {
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
 #define UNLOCK_EEPROM_SIZE 64
-#define TIMEOUT 100000
 
 /*** Function definitions ***/
 // Core functions - unlockCar and startCar
 void unlockCar(void);
 void startCar(struct tc_aes_key_sched_struct* s);
 
-// Declare password (Hey Kush can you figure out where these two things come into play?)
+// Declare password
 const uint8_t pass[] = PASSWORD;
 const uint8_t car_id[] = CAR_ID;
 
@@ -53,6 +52,7 @@ int main(void) {
   // Ensure EEPROM peripheral is enabled
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   EEPROMInit();
+  uint32_t nonce;
 
   // Initialize UART peripheral
   uart_init();
@@ -61,83 +61,53 @@ int main(void) {
   setup_board_link();
 
   while (true) {
+    uint8_t *arr[8]; memset(arr,0,8);
+    strncpy(arr,(uint8_t*) &nonce,4);
+    regular_send(char* arr,uint8_t type);
+    nonce++; //this is just a stub for debugging
     unlockCar();
   }
 }
+
+
 
 /**
  * @brief Function that handles unlocking of car
  */
 void unlockCar() {
+  //mask the interrupt for systick
+
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
-  uint32_t nonce;
-  bool car;
   message.buffer = buffer;
   struct tc_aes_key_sched_struct s;
-  generate_encrypt_key(&s, CAR_SECRET_LOC);
   memset(message.buffer,0,256);
 
-  // Receive packet with some error checking
-  receive_board_message_by_type(&message, UNLOCK_SYN,-1);
-  if(message.dev==0){
-    EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
-    car=0;
+  receive_board_message_by_type(&message, UNLOCK, TIMEOUT);
+  generate_encrypt_key(&s, CAR_SECRET_LOC);
+  if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID)){
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
+    startCar(buffer+20);
   }
   else{
-    EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
-    car=1;
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
+    memset(buffer,0,256);
+
   }
 
-  //do decrption and extract the number check if its valid
-  
-  if(!decrypt_n_compare(message.buffer,&s,CAR_SECRET_LOC,nonce)){
-    return;
-  };
-  memset(message.buffer,0,256);
-
-  //send UNLOCK ACK and do counter ++, no need to write to eeprom yet, for time reason
-  encrypt_n_send(CAR_SECRET_LOC, &s, nonce+1, UNLOCK_ACK);
-  memset(message.buffer,0,256);
-
-  //receive the final message for unlock
-  receive_board_message_by_type(&message,UNLOCK_FIN,TIMEOUT);
-
-  if(!decrypt_n_compare(message.buffer,&s,CAR_SECRET_LOC,nonce+2)){
-    encrypt_n_send(CAR_SECRET_LOC, &s, nonce, ACK_FAIL);
-    memset(message.buffer,0,256);
-  }
-  else{//it works unlock
-    nonce=nonce+3;
-    encrypt_n_send(CAR_SECRET_LOC, &s, nonce, ACK_SUCCESS); //fob updates the nonce and send start car magic
-    if(car==0){
-      EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
-    }
-    else{
-      EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
-    }
-    memset(message.buffer,0,256);
-    startCar(&s);
-  }
+  //at this point:
+  // 1. the buffer is fully decrypted
+  // 2. the key is no longer active and memory cleared
+  // 3. if decrypt_n_compare works, (first 20 bytes are unlock info, rest are feature info)
+  // 4. if decrypt_n_compare not work, clear the whole buffer, go back to while loop
 }
 
 
 /**
  * @brief Function that handles starting of car - feature list
  */
-void startCar(struct tc_aes_key_sched_struct* s) {
-  // Create a message struct variable for receiving data
-  MESSAGE_PACKET message;
-  uint8_t buffer[256];
-  message.buffer = buffer;
-
-
-  // Receive start message but with a time out!!
-  receive_board_message_by_type(&message, START_MAGIC,TIMEOUT);
-
-  //decrypt the message buffer and compare everything (use their pre-made compare procedures)
-  tc_aes_decrypt(buffer,buffer,s);
+void startCar(char* buffer) {
 
   FEATURE_DATA *feature_info = (FEATURE_DATA *)buffer;
 

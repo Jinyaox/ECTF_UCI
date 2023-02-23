@@ -20,14 +20,8 @@
 #include "inc/hw_memmap.h"
 #include "aes.h"
 
-#define ACK_SUCCESS 1
-#define ACK_FAIL 0
-#define ACK_MAGIC 0x54
 #define PAIR_MAGIC 0x55
-#define UNLOCK_MAGIC 0x56
-#define UNLOCK_SYN 0x50
-#define UNLOCK_ACK 0x51
-#define UNLOCK_FIN 0x52
+#define UNLOCK 0x56
 #define START_MAGIC 0x57
 #define BOARD_UART ((uint32_t)UART1_BASE)
 
@@ -38,7 +32,6 @@
 typedef struct
 {
   uint8_t magic;
-  uint8_t dev;
   uint8_t message_len;
   uint8_t *buffer;
 } MESSAGE_PACKET;
