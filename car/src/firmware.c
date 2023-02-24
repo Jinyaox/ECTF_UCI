@@ -89,7 +89,7 @@ void unlockCar() {
   generate_encrypt_key(&s, CAR_SECRET_LOC);
   if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID,nonce)){
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
-    startCar((char*) buffer+20);
+    startCar((char*) buffer+8);
   }
   else{
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
@@ -109,7 +109,6 @@ void unlockCar() {
  * @brief Function that handles starting of car - feature list
  */
 void startCar(char* buffer) {
-
   FEATURE_DATA *feature_info = (FEATURE_DATA *)buffer;
 
   // Verify correct car id

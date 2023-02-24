@@ -68,7 +68,7 @@ def main():
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
-        with open(str(sec_dir)+f"fob_sec_eprom.txt","w") as f:
+        with open(str(sec_dir)+f"Unpaired_fob_sec_eprom.txt","w") as f:
             f.write(''.join(random.choices(string.ascii_letters + string.digits, k=1)))
 
 
