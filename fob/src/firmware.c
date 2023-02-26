@@ -204,10 +204,10 @@ int main(void)
       if (debounce_sw_state == current_sw_state)
       {
         unlockCar(&fob_state_ram);
-        if (receiveAck())
-        {
-          startCar(&fob_state_ram);
-        }
+        // if (receiveAck())
+        // {
+        //   startCar(&fob_state_ram);
+        // }
       }
     }
     previous_sw_state = current_sw_state;
@@ -314,60 +314,23 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    
+    FEATURE_DATA *feature_info = fob_state_ram->feature_info;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
     uint8_t buffer[256];
     message.buffer = buffer;
     uint32_t nonce;
-    bool fob;
     struct tc_aes_key_sched_struct s;
-    generate_encrypt_key(&s, CAR_SECRET_LOC);
+    memset(message.buffer, 0, 256);
 
-    // Sending Initial Message to board
-    encrypt_n_send(CAR_SECRET_LOC, &s, nonce, UNLOCK_SYN);
-
-
-    memset(message.buffer,0,256);
-    // Receive packet with some error checking
-    receive_board_message_by_type(&message, UNLOCK_ACK,-1);
-    if(message.dev==0){
-      EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
-      fob=0;
-    }
-    else{
-      EEPROMRead((uint32_t *) nonce, CAR_NONCE_LOC , 4);
-      fob=1;
-    }
-
-    // Compare received message ++
-    if(!decrypt_n_compare(message.buffer,s,CAR_SECRET_LOC,nonce +1)){
-      return;
-    };
-
-    // Send final message
-    encrypt_n_send(CAR_SECRET_LOC, s, nonce+2, UNLOCK_FIN);
-    nonce=nonce+3;
-
-    memset(message.buffer,0,256);
-    // Receive Success/Failure message
-    receive_board_message_by_type(&message,ACK_SUCCESS,TIMEOUT) //IDK how to recieve ack_fail
-
-    if(!decrypt_n_compare(message.buffer,&s,CAR_SECRET_LOC,nonce+3)){
-      return // I dont know what to do if the ACK_SUCCESS doesnt match
-    }
-    else{
-      nonce=nonce+3; // How do I update nonce in EEPROMP
-      if(car==0){
-        EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
-      }
-      else{
-        EEPROMProgram(&nonce, CAR_NONCE_LOC , 4); //last arg must be multip of 4
-      }
-      memset(message.buffer,0,256);
-      startCar(); //Need to add an argument
-    }
-  }
+    receive_board_message_by_type(&message, UNLOCK_SYN, TIMEOUT);
+    generate_encrypt_key(&s, SECRET_KEY_LOC);
+    EEPROMRead((uint32_t *)nonce, NOUNCE_EEPROM_LOC, 4);
+    
+    encrypt_n_send(SECRET_KEY_LOC, &s, nonce, feature_info->features, feature_info->num_active, UNLOCK_EEPROM_LOC);
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
+    memset(buffer, 0, 256);    
+  }                           
 }
 
 /**
@@ -379,11 +342,8 @@ void startCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    MESSAGE_PACKET message;
-    message.magic = START_MAGIC;
-    message.message_len = sizeof(FEATURE_DATA);
-    message.buffer = (uint8_t *)&fob_state_ram->feature_info;
-    encrypt_n_send(&message);
+    // need to check if the fob is for the specific car id (?)
+
   }
 }
 
