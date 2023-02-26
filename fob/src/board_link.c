@@ -26,6 +26,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
 #include "board_link.h"
+#include "feature_list.h"
 
 //Encryption library including
 #include "aes.h"
@@ -130,37 +131,34 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, ui
 //----------------------------------------------------------------------------------------------
 // here below are helper functions written by Jinyao
 
-void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc){
+void generate_encrypt_key(TCAesKeySched_t *s, uint32_t secret_loc){
   //NUM_OF_NIST_KEYS 16 extracting 16 bytes from the secret location
   uint8_t nist_key[16];
   EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
   tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type){
+void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
+{
   MESSAGE_PACKET message;
-  uint8_t buffer[128];
+  uint8_t buffer[256];
   message.buffer = buffer;
-  memset(message.buffer,0,128);
+  memset(message.buffer, 0, 256);
   message.magic = type;
-  message.dev=0; //0 is always the car from fob side, just to keep a coherency
-  EEPROMRead((uint32_t *) message.buffer, secret_loc , 16);
-  uint8_t *arr=(uint8_t*) &nonce;
-  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
-  tc_aes_encrypt(message.buffer,message.buffer, s);
-
-  message.message_len=strlen((const char*)message.buffer);
-
+  EEPROMRead((uint32_t *) message.buffer, secret_loc, 4);
+  uint8_t *arr = (uint8_t *) &nonce;
+  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[6]=arr[2]; buffer[7]=arr[3];
+  // add feature
+  for(int j = 0; j < num_active; j++)
+  {
+    uint8_t *feature = features+j;        
+    for(int i = 8 + FEATURE_SIZE * j; i < FEATURE_SIZE * (j+1) + 8; i++)
+    {
+      buffer[i] = feature[i-8-FEATURE_SIZE*j];
+    }
+  }
+  tc_aes_encrypt(message.buffer, message.buffer, s);
+  message.message_len=strlen((const char*) message.buffer);
   send_board_message(&message);
 }
 
-bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
-  uint8_t buffer[256];
-  memset(buffer,0,256);
-  tc_aes_decrypt(in,in,s);
-  uint8_t *arr=(uint8_t*) &nonce;
-  EEPROMRead((uint32_t *) buffer, secret_loc , 16); //64 is the unlock eeprom size
-  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
-  
-  return strcmp((const char*)buffer,(const char*)in)==0;
-}
