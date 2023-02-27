@@ -15,6 +15,8 @@
 import socket
 import argparse
 
+from encryption import Encrypt
+
 
 # @brief Function to send commands to pair
 # a new fob.
@@ -22,6 +24,8 @@ import argparse
 # @param pairmed_fob_bridge, bridged serial connection to pairmed fob
 # @param pair_pin, pin used to pair a new fob
 def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
+
+    encryptor = Encrypt()
 
     # Connect to both sockets for serial
     unpaired_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,7 +39,8 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
     paired_sock.send(b"pair\n")
 
     # Send pin to the paired fob
-    pair_pin_bytes = str.encode(pair_pin + "\n")
+    encrypted_pair_pin = encryptor.encrypt(pair_pin) # add padding and nonce
+    pair_pin_bytes = str.encode(encrypted_pair_pin + "\n")
     paired_sock.send(pair_pin_bytes)
 
     # Set timeout for if pairing fails

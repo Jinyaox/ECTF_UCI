@@ -15,11 +15,17 @@
 import socket
 import argparse
 
+from encryption import Encrypt
+
+# encrypt messages (AES)
+# append nonce to pair pin
 
 # @brief Function to send commands to enable a feature on a fob
 # @param fob_bridge, bridged serial connection to fob
 # @param package_name, name of the package file to read from
 def enable(fob_bridge, package_name):
+
+    encryptor = Encrypt()
 
     # Connect fob socket to serial
     fob_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,12 +39,14 @@ def enable(fob_bridge, package_name):
         message = fhandle.read()
 
     # Send package to fob
-    fob_sock.send(message)
+    encrypted_message = encryptor.encrypt(message) # need to add padding and nonce
+    fob_sock.send(encrypted_message)
 
     # Set timeout for if enable fails
     fob_sock.settimeout(5)
     # Try to receive data - if failed, enabling failed
     try:
+        # Change size of bytes according to key size
         enable_success = fob_sock.recv(7)
         while len(enable_success) != 7:
             enable_success += fob_sock.recv(7 - len(enable_success))
