@@ -319,35 +319,21 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     MESSAGE_PACKET message;
     uint8_t buffer[256];
     message.buffer = buffer;
-    uint32_t nonce;
     struct tc_aes_key_sched_struct s;
     memset(message.buffer, 0, 256);
 
-    receive_board_message_by_type(&message, UNLOCK_SYN TIMEOUT);
+    receive_board_message_by_type(&message, UNLOCK_SYN, TIMEOUT);
     if (message.message_len != -1){
       generate_encrypt_key(&s, SECRET_KEY_LOC);
       //EEPROMRead((uint32_t *)nonce, NOUNCE_EEPROM_LOC, 4); How to receive the nonce and change it from type MESSAGE_PACKET to uint32_t (&message -> nonce)
       
-      encrypt_n_send(SECRET_KEY_LOC, &s, message, feature_info->features, feature_info->num_active, UNLOCK_MAGIC); //the message is suppose to be nonce
+      encrypt_n_send(SECRET_KEY_LOC, &s, (uint32_t)message.buffer, feature_info->features, feature_info->num_active, UNLOCK_MAGIC); //the message is suppose to be nonce
     }
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
     memset(message.buffer, 0, 256);
   }                           
 }
 
-/**
- * @brief Function that handles the fob starting a car
- *
- * @param fob_state_ram pointer to the current fob state in ram
- */
-void startCar(FLASH_DATA *fob_state_ram)
-{
-  if (fob_state_ram->paired == FLASH_PAIRED)
-  {
-    // need to check if the fob is for the specific car id (?)
-
-  }
-}
 
 /**
  * @brief Function that erases and rewrites the non-volatile data to flash
