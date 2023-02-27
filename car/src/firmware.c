@@ -29,7 +29,7 @@ typedef struct {
 } FEATURE_DATA;
 
 /*** Macro Definitions ***/
-// Definitions for unlock message location in EEPROM
+// Definit  ions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
 #define UNLOCK_EEPROM_SIZE 64
 #define TIMEOUT 100000
