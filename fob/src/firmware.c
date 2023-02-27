@@ -35,7 +35,7 @@
 /*** Macro Definitions ***/
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
-#define SECREAT_KEY_LOC 0x4C0
+#define SECRET_KEY_LOC 0x4C0
 #define NOUNCE_EEPROM_LOC 0x3C0
 #define UNLOCK_EEPROM_SIZE 64
 #define TIMEOUT 100000
@@ -323,13 +323,15 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     struct tc_aes_key_sched_struct s;
     memset(message.buffer, 0, 256);
 
-    receive_board_message_by_type(&message, UNLOCK_SYN, TIMEOUT);
-    generate_encrypt_key(&s, SECRET_KEY_LOC);
-    EEPROMRead((uint32_t *)nonce, NOUNCE_EEPROM_LOC, 4);
-    
-    encrypt_n_send(SECRET_KEY_LOC, &s, nonce, feature_info->features, feature_info->num_active, UNLOCK_EEPROM_LOC);
+    receive_board_message_by_type(&message, UNLOCK_SYN TIMEOUT);
+    if (message.message_len != -1){
+      generate_encrypt_key(&s, SECRET_KEY_LOC);
+      //EEPROMRead((uint32_t *)nonce, NOUNCE_EEPROM_LOC, 4); How to receive the nonce and change it from type MESSAGE_PACKET to uint32_t (&message -> nonce)
+      
+      encrypt_n_send(SECRET_KEY_LOC, &s, message, feature_info->features, feature_info->num_active, UNLOCK_MAGIC); //the message is suppose to be nonce
+    }
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
-    memset(buffer, 0, 256);    
+    memset(message.buffer, 0, 256);
   }                           
 }
 
