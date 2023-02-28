@@ -147,22 +147,3 @@ bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t 
   buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[6]=arr[2]; buffer[7]=arr[3];
   return strncmp((const char*)buffer,(const char*)in,8)==0;
 }
-
-
-//helper funtion for fob people
-void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type){ //UNLOCK 
-  MESSAGE_PACKET message;
-  uint8_t buffer[128];
-  message.buffer = buffer;
-  memset(message.buffer,0,128);
-  message.magic = type;
-  EEPROMRead((uint32_t *) message.buffer, secret_loc , 4);
-  uint8_t *arr=(uint8_t*) &nonce;
-  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
-  //pad the feature information 
-  tc_aes_encrypt(message.buffer,message.buffer, s);
-  message.message_len=strlen((const char*)message.buffer);
-  send_board_message(&message);
-
-  //this code is no longer in use, it may be helpful for fob's people right now, use the regular send below
-}

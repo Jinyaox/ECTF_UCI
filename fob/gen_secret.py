@@ -44,7 +44,7 @@ def main():
             fp.write("#define PAIRED 1\n")
             fp.write(f'#define PAIR_PIN "{args.pair_pin}"\n')
             fp.write(f'#define CAR_ID "{args.car_id}"\n')
-            fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
+            fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
             fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
             fp.write('#define PASSWORD "unlock"\n\n')
             fp.write("#endif\n")

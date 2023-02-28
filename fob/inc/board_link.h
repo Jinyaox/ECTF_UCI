@@ -24,11 +24,8 @@
 #define ACK_FAIL 0
 #define ACK_MAGIC 0x54
 #define PAIR_MAGIC 0x55
+#define NONCE_MAGIC 0x1
 #define UNLOCK_MAGIC 0x56
-#define UNLOCK_SYN 0x50
-#define UNLOCK_ACK 0x51
-#define UNLOCK_FIN 0x52
-#define START_MAGIC 0x57
 #define BOARD_UART ((uint32_t)UART1_BASE)
 
 /**

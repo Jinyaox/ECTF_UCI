@@ -23,8 +23,7 @@
 #define PAIR_MAGIC 0x55
 #define TIMEOUT 100000 //stub, need to chang to 1 second
 #define NONCE_MAGIC 0x1
-#define UNLOCK 0x56
-#define START_MAGIC 0x57
+#define UNLOCK_MAGIC 0x56
 #define BOARD_UART ((uint32_t)UART1_BASE)
 
 /**

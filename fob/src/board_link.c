@@ -133,7 +133,7 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   uint8_t nist_key[16];
   EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
   tc_aes128_set_encrypt_key(s, nist_key);
-
+}
 
 void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
 {
