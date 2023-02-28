@@ -35,6 +35,8 @@ include ${TIVA_ROOT}/makedefs
 ########################################################
 ############### START fob customization ################
 
+paired = false
+
 
 # Optimizations
 CFLAGS+=-Os
@@ -51,14 +53,14 @@ paired_fob_arg_check:
 	$(call check_defined, CAR_ID PAIR_PIN SECRETS_DIR BIN_PATH ELF_PATH EEPROM_PATH)
 
 paired_fob_gen_secret:
-	python3 gen_secret.py --car-id ${CAR_ID} --pair-pin ${PAIR_PIN} --secret-file ${SECRETS_DIR}/car_secrets.json --header-file inc/secrets.h --paired
-
+	python3 gen_secret.py --car-id ${CAR_ID} --secret-dirc ${SECRETS_DIR} --pair-pin ${PAIR_PIN} --secret-file ${SECRETS_DIR}/car_secrets.json --header-file inc/secrets.h --paired
+	${paired} = true
 
 unpaired_fob_arg_check:
 	$(call check_defined, SECRETS_DIR BIN_PATH ELF_PATH EEPROM_PATH)
 
 unpaired_fob_gen_secret:
-	python3 gen_secret.py --header-file inc/secrets.h
+	python3 gen_secret.py --secret-dirc ${SECRETS_DIR} --header-file inc/secrets.h
 
 
 ################ END fob customization ################
@@ -147,7 +149,8 @@ ${COMPILER}/firmware.axf: ${TIVA_ROOT}/driverlib/${COMPILER}/libdriver.a
 copy_artifacts:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
-	cp ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${EEPROM_PATH}
+	if
+	cp ${SECRETS_DIR}/fob_sec_eprom.txt ${EEPROM_PATH}
 
 SCATTERgcc_firmware=${TIVA_ROOT}/firmware.ld
 ENTRY_firmware=Firmware_Startup

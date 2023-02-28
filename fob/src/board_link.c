@@ -31,6 +31,9 @@
 //Encryption library including
 #include "aes.h"
 
+//Encryption library including
+#include "aes.h"
+
 /**
  * @brief Set the up board link object
  *
@@ -125,18 +128,12 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, ui
   return message->message_len;
 }
 
-
-//----------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------
-// here below are helper functions written by Jinyao
-
-void generate_encrypt_key(TCAesKeySched_t *s, uint32_t secret_loc){
+void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc){
   //NUM_OF_NIST_KEYS 16 extracting 16 bytes from the secret location
   uint8_t nist_key[16];
   EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
   tc_aes128_set_encrypt_key(s, nist_key);
-}
+
 
 void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
 {
@@ -161,4 +158,3 @@ void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint
   message.message_len=strlen((const char*) message.buffer);
   send_board_message(&message);
 }
-

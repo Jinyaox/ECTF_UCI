@@ -20,9 +20,8 @@
 #include "uart.h"
 #include "aes.h"
 
-// this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
-#ifdef EXAMPLE_AES
-#endif
+
+#include "aes.h"
 
 #define FOB_STATE_PTR 0x3FC00
 #define FLASH_DATA_SIZE         \
@@ -124,28 +123,6 @@ int main(void)
 
   // Initialize UART
   uart_init();
-
-#ifdef EXAMPLE_AES
-  // -------------------------------------------------------------------------
-  // example encryption using tiny-AES-c
-  // -------------------------------------------------------------------------
-  struct AES_ctx ctx;
-  uint8_t key[16] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
-                     0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
-  uint8_t plaintext[16] = "0123456789abcdef";
-
-  // initialize context
-  AES_init_ctx(&ctx, key);
-
-  // encrypt buffer (encryption happens in place)
-  AES_ECB_encrypt(&ctx, plaintext);
-
-  // decrypt buffer (decryption happens in place)
-  AES_ECB_decrypt(&ctx, plaintext);
-  // -------------------------------------------------------------------------
-  // end example
-  // -------------------------------------------------------------------------
-#endif
 
   // Initialize board link UART
   setup_board_link();
@@ -317,7 +294,7 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     FEATURE_DATA *feature_info = fob_state_ram->feature_info;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
-    uint8_t buffer[256];
+    char buffer[256];
     message.buffer = buffer;
     struct tc_aes_key_sched_struct s;
     memset(message.buffer, 0, 256);
@@ -332,7 +309,10 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
     memset(message.buffer, 0, 256);
   }                           
-}
+    generate_encrypt_key(&s, SECREAT_KEY_LOC);
+    encrypt_n_send(message.buffer,s,UNLOCK_EEPROM_LOC,nonce);
+
+  }
 
 
 /**

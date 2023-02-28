@@ -35,12 +35,11 @@ def main():
     secret = {}
     
     #generate an actual secret stored in EEPROM for encryption and decription 
-    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-    car_nonce=random.randint(0,1024)
-    secret[str(args.car_id)] = car_secret+str(car_nonce)
-    #define a secret's dummy location (0x0) in EEPROM
+    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+    secret[str(args.car_id)] = car_secret
+
     sec_location=0x0
-    nonce_location=0x10
+    ID_location=0x10
 
     # Save the secret file
     with open(args.secret_file, "w") as fp:
@@ -51,7 +50,7 @@ def main():
         fp.write("#ifndef __CAR_SECRETS__\n")
         fp.write("#define __CAR_SECRETS__\n\n")
         fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
-        fp.write(f"#define CAR_NONCE_LOC {nonce_location}\n\n")
+        fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
         fp.write(f'#define CAR_ID "{args.car_id}"\n\n')
         fp.write('#define PASSWORD "unlock"\n\n') #no idea what this is used for
         fp.write("#endif\n")
@@ -60,8 +59,7 @@ def main():
     #make sure write this thing to deployment
     sec_dir=args.secret_dirc
     with open(str(sec_dir)+f"/{args.car_id}_sec_eprom.txt","w") as f:
-        f.write(f"{secret[str(args.car_id)][:16]}")
-        f.write(f"{secret[str(args.car_id)][16:]}")
+        f.write(f"{secret[str(args.car_id)]}")
 
 
 if __name__ == "__main__":

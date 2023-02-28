@@ -71,9 +71,6 @@ uint32_t send_board_message(MESSAGE_PACKET *message) {
   return message->message_len;
 }
 
-
-
-
 /**
  * @brief Receive a message between boards
  *
@@ -86,7 +83,6 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
   if (message->magic == 0) {
     return 0;
   }
-  message->dev = (uint8_t)UARTCharGet(BOARD_UART);
   message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
 
   for (int i = 0; i < message->message_len; i++) {
@@ -95,9 +91,6 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
 
   return message->message_len;
 }
-
-
-
 
 /**
  * @brief Function that retreives messages until the specified message is found
@@ -137,30 +130,39 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type){
+void regular_send(char* buffer,uint8_t type){
+  MESSAGE_PACKET message;
+  message.buffer = buffer;
+  message.magic = type;
+  message.message_len=strlen((const char*)message.buffer);
+  send_board_message(&message);
+}
+
+bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
+  uint8_t buffer[32];
+  memset(buffer,0,32);
+  uint8_t *arr=(uint8_t*) &nonce;
+  tc_aes_decrypt(in,in,s);
+  EEPROMRead((uint32_t *) buffer, secret_loc , 4);
+  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[6]=arr[2]; buffer[7]=arr[3];
+  return strncmp((const char*)buffer,(const char*)in,8)==0;
+}
+
+
+//helper funtion for fob people
+void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct* s, uint32_t nonce, uint8_t type){ //UNLOCK 
   MESSAGE_PACKET message;
   uint8_t buffer[128];
   message.buffer = buffer;
   memset(message.buffer,0,128);
   message.magic = type;
-  message.dev=0; //0 is always the car from fob side, just to keep a coherency
-  EEPROMRead((uint32_t *) message.buffer, secret_loc , 16);
+  EEPROMRead((uint32_t *) message.buffer, secret_loc , 4);
   uint8_t *arr=(uint8_t*) &nonce;
-  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
+  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
+  //pad the feature information 
   tc_aes_encrypt(message.buffer,message.buffer, s);
-
   message.message_len=strlen((const char*)message.buffer);
-
   send_board_message(&message);
-}
 
-bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
-  uint8_t buffer[256];
-  memset(buffer,0,256);
-  tc_aes_decrypt(in,in,s);
-  uint8_t *arr=(uint8_t*) &nonce;
-  EEPROMRead((uint32_t *) buffer, secret_loc , 16); //64 is the unlock eeprom size
-  buffer[16]=arr[0]; buffer[17]=arr[1]; buffer[18]=arr[2]; buffer[19]=arr[3];
-  
-  return strcmp((const char*)buffer,(const char*)in)==0;
+  //this code is no longer in use, it may be helpful for fob's people right now, use the regular send below
 }
