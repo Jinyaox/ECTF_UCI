@@ -218,7 +218,7 @@ void pairFob(FLASH_DATA *fob_state_ram)
   else
   {
     message.buffer = (uint8_t *)&fob_state_ram->pair_info;
-    receive_board_message_by_type(&message, PAIR_MAGIC);
+    receive_board_message_by_type(&message, PAIR_MAGIC,-1);//stub, may need to change
     fob_state_ram->paired = FLASH_PAIRED;
     strcpy((char *)fob_state_ram->feature_info.car_id,
            (char *)fob_state_ram->pair_info.car_id);
@@ -282,7 +282,7 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    FEATURE_DATA *feature_info = fob_state_ram->feature_info;
+    FEATURE_DATA* feature_info = &fob_state_ram->feature_info;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
     char buffer[256];
@@ -323,7 +323,6 @@ uint8_t receiveAck()
   MESSAGE_PACKET message;
   uint8_t buffer[255];
   message.buffer = buffer;
-  receive_board_message_by_type(&message, ACK_MAGIC);
-
+  receive_board_message_by_type(&message, ACK_MAGIC,-1);
   return message.buffer[0];
 }

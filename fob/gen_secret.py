@@ -28,15 +28,9 @@ def main():
     parser.add_argument("--paired", action="store_true")
     args = parser.parse_args()
 
-    sec_location=0x0
-    ID_location=0x10
-
     if args.paired:
-        # Open the secret file, get the car's secret
-        with open(args.secret_file, "r") as fp:
-            secrets = json.load(fp)
-            secret = secrets[str(args.car_id)]
-
+        sec_location=0x0
+        ID_location=0x10
         # Write to header file
         with open(args.header_file, "w") as fp:
             fp.write("#ifndef __FOB_SECRETS__\n")
@@ -48,10 +42,6 @@ def main():
             fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
             fp.write('#define PASSWORD "unlock"\n\n')
             fp.write("#endif\n")
-        
-        sec_dir=args.secret_dirc
-        with open(str(sec_dir)+f"fob_sec_eprom.txt","w") as f:
-            f.write(f"{secret[str(args.car_id)]}")
         
 
     else:
