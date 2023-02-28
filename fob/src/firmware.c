@@ -18,6 +18,7 @@
 #include "board_link.h"
 #include "feature_list.h"
 #include "uart.h"
+#include "aes.h"
 
 
 #include "aes.h"
@@ -33,7 +34,7 @@
 /*** Macro Definitions ***/
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
-#define SECREAT_KEY_LOC 0x4C0
+#define SECRET_KEY_LOC 0x4C0
 #define NOUNCE_EEPROM_LOC 0x3C0
 #define UNLOCK_EEPROM_SIZE 64
 #define TIMEOUT 100000
@@ -180,10 +181,10 @@ int main(void)
       if (debounce_sw_state == current_sw_state)
       {
         unlockCar(&fob_state_ram);
-        if (receiveAck())
-        {
-          startCar(&fob_state_ram);
-        }
+        // if (receiveAck())
+        // {
+        //   startCar(&fob_state_ram);
+        // }
       }
     }
     previous_sw_state = current_sw_state;
@@ -290,33 +291,29 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    // Sending Initial Message to board
+    FEATURE_DATA *feature_info = fob_state_ram->feature_info;
+    // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
     char buffer[256];
     message.buffer = buffer;
     struct tc_aes_key_sched_struct s;
+    memset(message.buffer, 0, 256);
+
+    receive_board_message_by_type(&message, UNLOCK_SYN, TIMEOUT);
+    if (message.message_len != -1){
+      generate_encrypt_key(&s, SECRET_KEY_LOC);
+      //EEPROMRead((uint32_t *)nonce, NOUNCE_EEPROM_LOC, 4); How to receive the nonce and change it from type MESSAGE_PACKET to uint32_t (&message -> nonce)
+      
+      encrypt_n_send(SECRET_KEY_LOC, &s, (uint32_t)message.buffer, feature_info->features, feature_info->num_active, UNLOCK_MAGIC); //the message is suppose to be nonce
+    }
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
+    memset(message.buffer, 0, 256);
+  }                           
     generate_encrypt_key(&s, SECREAT_KEY_LOC);
     encrypt_n_send(message.buffer,s,UNLOCK_EEPROM_LOC,nonce);
 
   }
-}
 
-/**
- * @brief Function that handles the fob starting a car
- *
- * @param fob_state_ram pointer to the current fob state in ram
- */
-void startCar(FLASH_DATA *fob_state_ram)
-{
-  if (fob_state_ram->paired == FLASH_PAIRED)
-  {
-    MESSAGE_PACKET message;
-    message.magic = START_MAGIC;
-    message.message_len = sizeof(FEATURE_DATA);
-    message.buffer = (uint8_t *)&fob_state_ram->feature_info;
-    send_board_message(&message);
-  }
-}
 
 /**
  * @brief Function that erases and rewrites the non-volatile data to flash
@@ -327,4 +324,20 @@ void saveFobState(FLASH_DATA *flash_data)
 {
   FlashErase(FOB_STATE_PTR);
   FlashProgram((uint32_t *)flash_data, FOB_STATE_PTR, FLASH_DATA_SIZE);
+}
+
+/**
+ * @brief Function that receives an ack and returns whether ack was
+ * success/failure
+ *
+ * @return uint8_t Ack success/failure
+ */
+uint8_t receiveAck()
+{
+  MESSAGE_PACKET message;
+  uint8_t buffer[255];
+  message.buffer = buffer;
+  receive_board_message_by_type(&message, ACK_MAGIC);
+
+  return message.buffer[0];
 }
