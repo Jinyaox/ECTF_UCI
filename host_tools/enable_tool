@@ -15,10 +15,8 @@
 import socket
 import argparse
 
-from encryption import Encrypt
+from encryption import Encrypt, nonce
 
-# encrypt messages (AES)
-# append nonce to pair pin
 
 # @brief Function to send commands to enable a feature on a fob
 # @param fob_bridge, bridged serial connection to fob
@@ -45,13 +43,25 @@ def enable(fob_bridge, package_name):
     # Set timeout for if enable fails
     fob_sock.settimeout(5)
     # Try to receive data - if failed, enabling failed
+    # length should be 16
     try:
         # Change size of bytes according to key size
-        enable_success = fob_sock.recv(7)
-        while len(enable_success) != 7:
-            enable_success += fob_sock.recv(7 - len(enable_success))
+        # enable_success = fob_sock.recv(7)
+        enable_success = fob_sock.recv(16)
 
-        print(enable_success)
+        # while len(enable_success) != 7:
+           # enable_success += fob_sock.recv(7 - len(enable_success))
+        while len(enable_success) != 16:
+            enable_success += fob_sock.recv(16 - len(enable_success))
+
+        plain_text = encryptor.decrypt(enable_success).decode
+        received_nonce = plain_text[-4:]
+        if (received_nonce == nonce):
+            encryptor.update_nonce()
+
+        # print(enable_success)
+        print("Enabled")
+
     except socket.timeout:
         print("Failed to enable feature")
 

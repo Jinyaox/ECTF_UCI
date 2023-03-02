@@ -15,7 +15,10 @@
 import socket
 import argparse
 
-from encryption import Encrypt
+from encryption import Encrypt, nonce
+from Crypto.Hash import SHA256
+
+# store hashed pair pin in json file
 
 
 # @brief Function to send commands to pair
@@ -39,19 +42,32 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
     paired_sock.send(b"pair\n")
 
     # Send pin to the paired fob
-    encrypted_pair_pin = encryptor.encrypt(pair_pin) # add padding and nonce
-    pair_pin_bytes = str.encode(encrypted_pair_pin + "\n")
+    encrypted_pair_pin = encryptor.encrypt(pair_pin)
+    pair_pin_bytes = encrypted_pair_pin + str.encode("\n")
     paired_sock.send(pair_pin_bytes)
 
     # Set timeout for if pairing fails
     unpaired_sock.settimeout(5)
     # Try to receive data - if failed, pairing failed
+    # length should be 16
     try:
-        pair_success = unpaired_sock.recv(6)
-        while len(pair_success) != 6:
-            pair_success += unpaired_sock.recv(6 - len(pair_success))
+        #pair_success = unpaired_sock.recv(6)
+        pair_success = unpaired_sock.recv(16)
 
-        print(pair_success)
+        # while len(pair_success) != 6:
+            # pair_success += unpaired_sock.recv(6 - len(pair_success))
+        
+        while len(pair_success) != 16:
+            pair_success += unpaired_sock.recv(16 - len(pair_success))
+
+        plain_text = encryptor.decrypt(pair_success).decode()
+        received_nonce = plain_text[-4:]
+        if (received_nonce == nonce):
+            # encryptor.update_nonce()
+
+        # print(pair_success)
+        print("Paired")
+
     except socket.timeout:
         print("Failed to pair fob")
 
