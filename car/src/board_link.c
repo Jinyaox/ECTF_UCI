@@ -139,11 +139,10 @@ void regular_send(char* buffer,uint8_t type){
 }
 
 bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
-  uint8_t buffer[32];
-  memset(buffer,0,32);
+  uint8_t buffer[16];
+  memset(buffer,0,16);
   uint8_t *arr=(uint8_t*) &nonce;
   tc_aes_decrypt(in,in,s);
-  EEPROMRead((uint32_t *) buffer, secret_loc , 4);
-  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[6]=arr[2]; buffer[7]=arr[3];
-  return strncmp((const char*)buffer,(const char*)in,8)==0;
+  buffer[0]=arr[0]; buffer[0]=arr[1]; buffer[0]=arr[2]; buffer[0]=arr[3];
+  return strncmp((const char*)buffer,(const char*)in,4)==0;
 }

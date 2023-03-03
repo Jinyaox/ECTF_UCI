@@ -20,9 +20,6 @@
 #include "inc/hw_memmap.h"
 #include "aes.h"
 
-#define ACK_SUCCESS 1
-#define ACK_FAIL 0
-#define ACK_MAGIC 0x54
 #define PAIR_MAGIC 0x55
 #define NONCE_MAGIC 0x1
 #define UNLOCK_MAGIC 0x56
@@ -74,7 +71,7 @@ uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type,uin
 
 //helper functions defined by JINYAO (Compile Ready)
 void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc);
-void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type);
+void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type);
 //bool decrypt_n_compare(const uint8_t *in, struct tc_aes_key_sched_struct *s, uint32_t secret_loc, uint32_t nonce);
 
 #endif

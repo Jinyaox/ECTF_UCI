@@ -131,21 +131,20 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(uint32_t secret_loc, struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
+void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
 {
   MESSAGE_PACKET message;
   uint8_t buffer[256];
   message.buffer = buffer;
   memset(message.buffer, 0, 256);
   message.magic = type;
-  EEPROMRead((uint32_t *) message.buffer, secret_loc, 4);
   uint8_t *arr = (uint8_t *) &nonce;
-  buffer[4]=arr[0]; buffer[5]=arr[1]; buffer[6]=arr[2]; buffer[7]=arr[3];
+  buffer[0]=arr[0]; buffer[1]=arr[1]; buffer[2]=arr[2]; buffer[3]=arr[3];
   // add feature
   for(int j = 0; j < num_active; j++)
   {
     uint8_t *feature = features+j;        
-    for(int i = 8 + FEATURE_SIZE * j; i < FEATURE_SIZE * (j+1) + 8; i++)
+    for(int i = 4 + FEATURE_SIZE * j; i < FEATURE_SIZE * (j+1) + 4; i++)
     {
       buffer[i] = feature[i-8-FEATURE_SIZE*j];
     }

@@ -35,11 +35,10 @@ def main():
     secret = {}
     
     #generate an actual secret stored in EEPROM for encryption and decription 
-    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-    secret[str(args.car_id)] = car_secret
+    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    secret[str(args.car_id)] = car_secret+str(args.car_id) #this should give about 22 bytes
 
     sec_location=0x0
-    ID_location=0x10
 
     # Save the secret file
     with open(args.secret_file, "w") as fp:
@@ -50,9 +49,7 @@ def main():
         fp.write("#ifndef __CAR_SECRETS__\n")
         fp.write("#define __CAR_SECRETS__\n\n")
         fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
-        fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
         fp.write(f'#define CAR_ID "{args.car_id}"\n\n')
-        fp.write('#define PASSWORD "unlock"\n\n') #no idea what this is used for
         fp.write("#endif\n")
     
     

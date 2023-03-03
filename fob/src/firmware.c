@@ -38,32 +38,14 @@
 // Defines a struct for the format of an enable message
 typedef struct
 {
-  uint8_t car_id[8];
   uint8_t feature;
 } ENABLE_PACKET;
-
-// Defines a struct for the format of a pairing message
-typedef struct
-{
-  uint8_t car_id[8];
-  uint8_t password[8];
-  uint8_t pin[8];
-} PAIR_PACKET;
-
-// Defines a struct for the format of start message
-typedef struct
-{
-  uint8_t car_id[8];
-  uint8_t num_active;
-  uint8_t features[NUM_FEATURES];
-} FEATURE_DATA;
 
 // Defines a struct for storing the state in flash
 typedef struct
 {
   uint8_t paired;
-  PAIR_PACKET pair_info;
-  FEATURE_DATA feature_info;
+  uint8_t active_features; //form of 00000001 00000010 00000100
 } FLASH_DATA;
 
 /*** Function definitions ***/
@@ -88,18 +70,13 @@ uint8_t receiveAck();
 int main(void)
 {
   FLASH_DATA fob_state_ram;
-  FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR;
+  FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR; //this is stored in flash some information
 
 // If paired fob, initialize the system information
 #if PAIRED == 1
   if (fob_state_flash->paired == FLASH_UNPAIRED)
   {
-    strcpy((char *)(fob_state_ram.pair_info.password), PASSWORD);
-    strcpy((char *)(fob_state_ram.pair_info.pin), PAIR_PIN);
-    strcpy((char *)(fob_state_ram.pair_info.car_id), CAR_ID);
-    strcpy((char *)(fob_state_ram.feature_info.car_id), CAR_ID);
     fob_state_ram.paired = FLASH_PAIRED;
-
     saveFobState(&fob_state_ram);
   }
 #endif
@@ -124,8 +101,7 @@ int main(void)
 
   // Setup SW1
   GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
-  GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA,
-                   GPIO_PIN_TYPE_STD_WPU);
+  GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA,GPIO_PIN_TYPE_STD_WPU);
 
   // Declare a buffer for reading and writing to UART
   uint8_t uart_buffer[10];
@@ -187,47 +163,46 @@ int main(void)
  *
  * @param fob_state_ram pointer to the current fob state in ram
  */
-void pairFob(FLASH_DATA *fob_state_ram)
+void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are active 
 {
   MESSAGE_PACKET message;
-  // Start pairing transaction - fob is already paired
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    int16_t bytes_read;
-    uint8_t uart_buffer[8];
-    uart_write(HOST_UART, (uint8_t *)"Enter pin: ", 11);
-    bytes_read = uart_readline(HOST_UART, uart_buffer);
+    struct tc_aes_key_sched_struct s;
+    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT);
+    message.buffer=char[256];
+    message.magic=PAIR_MAGIC;
+    memset(message.buffer,0,256);
+    EEPROMRead(message.buffer, AES_SECRET_LOC , 16);
 
-    if (bytes_read == 6)
-    {
-      // If the pin is correct
-      if (!(strcmp((char *)uart_buffer,
-                   (char *)fob_state_ram->pair_info.pin)))
-      {
-        // Pair the new key by sending a PAIR_PACKET structure
-        // with required information to unlock door
-        message.message_len = sizeof(PAIR_PACKET);
-        message.magic = PAIR_MAGIC;
-        message.buffer = (uint8_t *)&fob_state_ram->pair_info;
-        send_board_message(&message);
-      }
-    }
+    //from 16 to whatever will be all feature information, put them in buffer
+
+    tc_aes_encrypt(message.buffer, message.buffer, &s);
+    message.message_len=strlen((const char*) message.buffer);
+    send_board_message(&message);
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
+    memset(message.buffer,0,256);
   }
 
-  // Start pairing transaction - fob is not paired
+
   else
   {
-    message.buffer = (uint8_t *)&fob_state_ram->pair_info;
-    receive_board_message_by_type(&message, PAIR_MAGIC,-1);//stub, may need to change
+    struct tc_aes_key_sched_struct s;
+    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT);
+    message.buffer=char[256];
+    memset(message.buffer,0,256);
+    receive_board_message_by_type(&message, PAIR_MAGIC,-1);
+    //decrypt the whole thing and get first 16 bytes as AES, write to EEPROM, the rest last byte is feature info, in ram then save
+    
+    
     fob_state_ram->paired = FLASH_PAIRED;
-    strcpy((char *)fob_state_ram->feature_info.car_id,
-           (char *)fob_state_ram->pair_info.car_id);
-
     uart_write(HOST_UART, (uint8_t *)"Paired", 6);
-
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
+    memset(message.buffer,0,256); 
     saveFobState(fob_state_ram);
   }
 }
+
 
 /**
  * @brief Function that handles enabling a new feature on the fob
@@ -295,7 +270,7 @@ void unlockCar(FLASH_DATA *fob_state_ram)
       generate_encrypt_key(&s, AES_SECRET_LOC);
       encrypt_n_send(CAR_UNLOCK_ID, &s, (uint32_t)message.buffer, feature_info->features, feature_info->num_active, UNLOCK_MAGIC);
     }
-    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); tive_feat
     memset(message.buffer, 0, 256);
   }
 }
@@ -310,19 +285,4 @@ void saveFobState(FLASH_DATA *flash_data)
 {
   FlashErase(FOB_STATE_PTR);
   FlashProgram((uint32_t *)flash_data, FOB_STATE_PTR, FLASH_DATA_SIZE);
-}
-
-/**
- * @brief Function that receives an ack and returns whether ack was
- * success/failure
- *
- * @return uint8_t Ack success/failure
- */
-uint8_t receiveAck()
-{
-  MESSAGE_PACKET message;
-  uint8_t buffer[255];
-  message.buffer = buffer;
-  receive_board_message_by_type(&message, ACK_MAGIC,-1);
-  return message.buffer[0];
 }

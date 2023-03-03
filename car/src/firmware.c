@@ -20,14 +20,6 @@
 
 #include "aes.h"
 
-/*** Structure definitions ***/
-// Structure of start_car packet FEATURE_DATA
-typedef struct {
-  uint8_t car_id[8];
-  uint8_t num_active;
-  uint8_t features[NUM_FEATURES];
-} FEATURE_DATA;
-
 /*** Macro Definitions ***/
 // Definit  ions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
@@ -39,7 +31,6 @@ void unlockCar(void);
 void startCar(char* buffer);
 
 // Declare password
-const uint8_t pass[] = PASSWORD;
 const uint8_t car_id[] = CAR_ID;
 
 uint32_t nonce;
@@ -89,12 +80,11 @@ void unlockCar() {
   generate_encrypt_key(&s, CAR_SECRET_LOC);
   if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID,nonce)){
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
-    startCar((char*) buffer+8);
+    startCar((char*) buffer+4);
   }
   else{
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     memset(buffer,0,256);
-
   }
 
   //at this point:
@@ -109,21 +99,26 @@ void unlockCar() {
  * @brief Function that handles starting of car - feature list
  */
 void startCar(char* buffer) {
-  FEATURE_DATA *feature_info = (FEATURE_DATA *)buffer;
+  uint8_t feature_info = buffer[0];
+  bool active[NUM_FEATURES]; memset(active,false,NUM_FEATURES);
 
-  // Verify correct car id
-  if (strcmp((char *)car_id, (char *)feature_info->car_id)) {
-    return;
+  if(feature_info & 0x01){
+    active[0]=true;
+  }
+  if(feature_info & 0x02){
+    active[1]=true;
+  }
+  if(feature_info & 0x04){
+    active[2]=true;
   }
 
   // Print out features for all active features
-  for (int i = 0; i < feature_info->num_active; i++) {
-    uint8_t eeprom_message[64];
-
-    uint32_t offset = feature_info->features[i] * FEATURE_SIZE;
-
-    EEPROMRead((uint32_t *)eeprom_message, FEATURE_END - offset, FEATURE_SIZE);
-
-    uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
+  for (int i = 0; i < NUM_FEATURES; i++) {
+    if(active[i]){
+      uint8_t eeprom_message[64];
+      uint32_t offset = feature_info->features[i] * FEATURE_SIZE;
+      EEPROMRead((uint32_t *)eeprom_message, FEATURE_END - offset, FEATURE_SIZE);
+      uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
+    }
   }
 }

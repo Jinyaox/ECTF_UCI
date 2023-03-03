@@ -27,39 +27,46 @@ def main():
     parser.add_argument("--header-file", type=Path)
     parser.add_argument("--paired", action="store_true")
     args = parser.parse_args()
+    sec_location=0x0
+    glob_sec_location=0x18
+
+    id_pin_pair={}
 
     if args.paired:
-        sec_location=0x0
-        ID_location=0x10
         # Write to header file
         with open(args.header_file, "w") as fp:
             fp.write("#ifndef __FOB_SECRETS__\n")
             fp.write("#define __FOB_SECRETS__\n\n")
             fp.write("#define PAIRED 1\n")
-            fp.write(f'#define PAIR_PIN "{args.pair_pin}"\n')
-            fp.write(f'#define CAR_ID "{args.car_id}"\n')
             fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
-            fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
-            fp.write('#define PASSWORD "unlock"\n\n')
+            fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")
         
+        sec_dir=args.secret_dirc
+        with open(str(sec_dir)+f"id_pin_pair.txt","a") as f:
+            f.write('\n'+str(args.car_id)+",",)
 
+        with open(str(sec_dir)+'car_secrets.json', "r") as fp:
+            id_pin_pair = json.load(fp)
+        
+        id_pin_pair[str(args.car_id)]=str(hash(str(args.pair_pin)))
+        
+        with open(str(sec_dir)+'car_secrets.json', "w") as fp:
+            json.dump(id_pin_pair, fp, indent=4)
+        
     else:
         # Write to header file
         with open(args.header_file, "w") as fp:
             fp.write("#ifndef __FOB_SECRETS__\n")
             fp.write("#define __FOB_SECRETS__\n\n")
             fp.write("#define PAIRED 0\n")
-            fp.write('#define PAIR_PIN "000000"\n')
-            fp.write('#define CAR_ID "000000"\n')
-            fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
-            fp.write(f"#define CAR_UNLOCK_ID {ID_location}\n\n")
-            fp.write('#define PASSWORD "unlock"\n\n')
+            fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
+            fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
         with open(str(sec_dir)+f"Unpaired_fob_sec_eprom.txt","w") as f:
-            f.write(''.join(random.choices(string.ascii_letters + string.digits, k=1)))
+            f.write(''.join(random.choices("0", k=16)))
 
 
 if __name__ == "__main__":
