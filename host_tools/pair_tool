@@ -64,9 +64,8 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
         received_nonce = plain_text[-4:]
         if (received_nonce == nonce):
             # encryptor.update_nonce()
-
-        # print(pair_success)
-        print("Paired")
+            #print(pair_success)
+            print("Paired")
 
     except socket.timeout:
         print("Failed to pair fob")
