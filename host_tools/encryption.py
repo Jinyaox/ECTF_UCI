@@ -6,6 +6,7 @@
 # documentation can be found here : https://pypi.org/project/pycrypto/
 
 import os
+import json
 
 # Fernet encrypt given data using AES-CBC
 # https://cryptography.io/en/latest/fernet/
@@ -14,9 +15,15 @@ from cryptography.fernet import Fernet
 # key and nonce must be stored in a file
 key = Fernet.generate_key()
 nonce = os.urandom(4)
- 
+     
 class Encrypt:
     def __init__(self):
+        if not os.path.isfile('key.json'):
+            with open('key.json', 'w') as f:
+                json.dump(key.hex(), f)
+        if not os.path.isfile('nonce.json'):
+            with open('nonce.json', 'w') as f:
+                json.dump(nonce.hex(), f)
         self._fernet = Fernet(key)
     
     def encrypt(self, message):
@@ -32,3 +39,5 @@ class Encrypt:
     def update_nonce(self):
         global nonce
         nonce = os.urandom(4)
+        with open('nonce.json', 'w') as f:
+            json.dump(nonce.hex(), f)
