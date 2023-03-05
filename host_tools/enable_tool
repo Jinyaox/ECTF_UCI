@@ -50,7 +50,7 @@ def enable(fob_bridge, package_name):
 
         plain_text = encryptor.decrypt(enable_success).decode
         received_nonce = plain_text[-4:]
-        with open(nonce.json, 'r') as n:
+        with open('nonce.json', 'r') as n:
             nonce = json.load(n)
         if (received_nonce == nonce):
             encryptor.update_nonce()
