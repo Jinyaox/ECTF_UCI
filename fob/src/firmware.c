@@ -193,7 +193,11 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
     memset(message.buffer,0,256);
     receive_board_message_by_type(&message, PAIR_MAGIC,-1);
     //decrypt the whole thing and get first 16 bytes as AES, write to EEPROM, the rest last byte is feature info, in ram then save
-    
+
+    tc_aes_decrypt(message.buffer, message.buffer, &s);
+    AES = bitExtracted(&s, 16, 0); //Still unsure where yo store the first 16 bits
+                                  // How to write to EEPROM?
+    fob_state_ram->active_features = bitExtracted(&s, 8, 16);
     
     fob_state_ram->paired = FLASH_PAIRED;
     uart_write(HOST_UART, (uint8_t *)"Paired", 6);

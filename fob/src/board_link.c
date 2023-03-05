@@ -153,3 +153,7 @@ void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *
   message.message_len=strlen((const char*) message.buffer);
   send_board_message(&message);
 }
+int bitExtracted(int number, int k, int p)
+{
+    return (((1 << k) - 1) & (number >> (p - 1)));
+}
