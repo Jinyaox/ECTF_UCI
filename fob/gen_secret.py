@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--paired", action="store_true")
     args = parser.parse_args()
     sec_location=0x0
-    glob_sec_location=0x18
+    glob_sec_location=0x10
 
     id_pin_pair={}
 
@@ -38,6 +38,7 @@ def main():
             fp.write("#ifndef __FOB_SECRETS__\n")
             fp.write("#define __FOB_SECRETS__\n\n")
             fp.write("#define PAIRED 1\n")
+            fp.write(f'#define CAR_ID "{args.car_id}"\n')
             fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
             fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")
@@ -60,6 +61,7 @@ def main():
             fp.write("#ifndef __FOB_SECRETS__\n")
             fp.write("#define __FOB_SECRETS__\n\n")
             fp.write("#define PAIRED 0\n")
+            fp.write('#define CAR_ID "000000"\n')
             fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
             fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")

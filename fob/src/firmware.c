@@ -38,12 +38,14 @@
 // Defines a struct for the format of an enable message
 typedef struct
 {
+  uint8_t car_id[8];
   uint8_t feature;
 } ENABLE_PACKET;
 
 // Defines a struct for storing the state in flash
 typedef struct
 {
+  uint8_t car_id[8];
   uint8_t paired;
   uint8_t active_features; //form of 00000001 00000010 00000100
 } FLASH_DATA;
@@ -55,9 +57,6 @@ void pairFob(FLASH_DATA *fob_state_ram);
 void unlockCar(FLASH_DATA *fob_state_ram);
 void enableFeature(FLASH_DATA *fob_state_ram);
 void startCar(FLASH_DATA *fob_state_ram);
-
-// Helper functions - receive ack message
-uint8_t receiveAck();
 
 /**
  * @brief Main function for the fob example
@@ -76,6 +75,7 @@ int main(void)
 #if PAIRED == 1
   if (fob_state_flash->paired == FLASH_UNPAIRED)
   {
+    strcpy(fob_state_ram.car_id,CAR_ID);
     fob_state_ram.paired = FLASH_PAIRED;
     saveFobState(&fob_state_ram);
   }
@@ -87,9 +87,9 @@ int main(void)
   }
 
   // This will run on first boot to initialize features
-  if (fob_state_ram.feature_info.num_active == 0xFF)
+  if (fob_state_ram.active_features == 0xFF)
   {
-    fob_state_ram.feature_info.num_active = 0;
+    fob_state_ram.active_features = 0;
     saveFobState(&fob_state_ram);
   }
 
@@ -217,31 +217,12 @@ void enableFeature(FLASH_DATA *fob_state_ram)
     uart_readline(HOST_UART, uart_buffer);
 
     ENABLE_PACKET *enable_message = (ENABLE_PACKET *)uart_buffer;
-    if (strcmp((char *)fob_state_ram->pair_info.car_id,
+    if (strcmp((char *)fob_state_ram->car_id,
                (char *)enable_message->car_id))
     {
       return;
     }
-
-    // Feature list full
-    if (fob_state_ram->feature_info.num_active == NUM_FEATURES)
-    {
-      return;
-    }
-
-    // Search for feature in list
-    for (int i = 0; i < fob_state_ram->feature_info.num_active; i++)
-    {
-      if (fob_state_ram->feature_info.features[i] == enable_message->feature)
-      {
-        return;
-      }
-    }
-
-    fob_state_ram->feature_info
-        .features[fob_state_ram->feature_info.num_active] =
-        enable_message->feature;
-    fob_state_ram->feature_info.num_active++;
+    strncpy(fob_state_ram->active_features,enable_message->feature,1);
 
     saveFobState(fob_state_ram);
     uart_write(HOST_UART, (uint8_t *)"Enabled", 7);
