@@ -1,16 +1,9 @@
 #!/usr/bin/python3 -u
 
 # @file pair_tool
-# @author Frederich Stine
+# @author Kenta, Yiran Wang
 # @brief host tool for pairing a new key fob
 # @date 2023
-#
-# This source file is part of an example system for MITRE's 2023 Embedded
-# CTF (eCTF). This code is being provided only for educational purposes for the
-# 2023 MITRE eCTF competition, and may not meet MITRE standards for quality.
-# Use this code at your own risk!
-#
-# @copyright Copyright (c) 2023 The MITRE Corporation
 
 import socket
 import argparse
@@ -62,6 +55,8 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
 
         plain_text = encryptor.decrypt(pair_success).decode()
         received_nonce = plain_text[-4:]
+        with open('nonce.json', 'r') as n:
+            nonce = json.load()
         if (received_nonce == nonce):
             # encryptor.update_nonce()
             #print(pair_success)
