@@ -69,13 +69,14 @@ void startCar(FLASH_DATA *fob_state_ram);
 int main(void)
 {
   FLASH_DATA fob_state_ram;
+  memset(&fob_state_ram, 0, FLASH_DATA_SIZE)
   FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR; //this is stored in flash some information
 
 // If paired fob, initialize the system information
 #if PAIRED == 1
   if (fob_state_flash->paired == FLASH_UNPAIRED)
   {
-    strcpy(fob_state_ram.car_id,CAR_ID);
+    strncpy(fob_state_ram.car_id,CAR_ID,6);
     fob_state_ram.paired = FLASH_PAIRED;
     saveFobState(&fob_state_ram);
   }
