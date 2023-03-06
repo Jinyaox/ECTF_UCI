@@ -187,17 +187,19 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
 
   else
   {
+
     struct tc_aes_key_sched_struct s;
-    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT);
+    uint32_t r;
+    generate_encrypt_key(&shttps://i.imgur.com/PqIdvpi.png uint32_t HOST/FOB_SECT); 
     message.buffer=char[256];
     memset(message.buffer,0,256);
     receive_board_message_by_type(&message, PAIR_MAGIC,-1);
     //decrypt the whole thing and get first 16 bytes as AES, write to EEPROM, the rest last byte is feature info, in ram then save
 
     tc_aes_decrypt(message.buffer, message.buffer, &s);
-    AES = bitExtracted(&s, 16, 0); //Still unsure where yo store the first 16 bits
-                                  // How to write to EEPROM?
-    fob_state_ram->active_features = bitExtracted(&s, 8, 16);
+    r = bitExtracted(message.buffer, 128, 0); //Still unsure where to store the first 16 bits
+    // How to write to EEPROM?
+    fob_state_ram->active_features = bitExtracted(message.buffer, 8, 128);
     
     fob_state_ram->paired = FLASH_PAIRED;
     uart_write(HOST_UART, (uint8_t *)"Paired", 6);
