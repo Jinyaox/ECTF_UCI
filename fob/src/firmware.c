@@ -176,24 +176,25 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
     EEPROMRead(message.buffer, AES_SECRET_LOC , 16);
 
     //from 16 to whatever will be all feature information, put them in buffer
-
+    message.buffer[16] = fob_state_ram->active_features;
     tc_aes_encrypt(message.buffer, message.buffer, &s);
     message.message_len=strlen((const char*) message.buffer);
     send_board_message(&message);
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
     memset(message.buffer,0,256);
   }
-
-
   else
   {
     struct tc_aes_key_sched_struct s;
-    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT);
+    
+    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT); 
     message.buffer=char[256];
     memset(message.buffer,0,256);
     receive_board_message_by_type(&message, PAIR_MAGIC,-1);
     //decrypt the whole thing and get first 16 bytes as AES, write to EEPROM, the rest last byte is feature info, in ram then save
-    
+    tc_aes_decrypt(message.buffer, message.buffer, &s);
+    EEPROMPROGRAM(message.buffer, AES_SECRET_LOC, 16);
+    fob_state_ram->active_features = message.buffer[16];
     
     fob_state_ram->paired = FLASH_PAIRED;
     uart_write(HOST_UART, (uint8_t *)"Paired", 6);
