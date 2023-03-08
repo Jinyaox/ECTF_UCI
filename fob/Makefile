@@ -118,8 +118,7 @@ ${COMPILER}/firmware.axf: ${COMPILER}/utils.o
 copy_artifacts:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
-	cp ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${EEPROM_PATH}
-	cp ${SECRETS_DIR}/global_secrets.txt ${EEPROM_PATH}
+	cp ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${SECRETS_DIR}/global_secrets.txt ${EEPROM_PATH}
 
 SCATTERgcc_firmware=${TIVA_ROOT}/firmware.ld
 ENTRY_firmware=Firmware_Startup
