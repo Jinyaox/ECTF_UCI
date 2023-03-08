@@ -78,7 +78,7 @@ void unlockCar() {
 
   receive_board_message_by_type(&message, UNLOCK_MAGIC, TIMEOUT);
   generate_encrypt_key(&s, CAR_SECRET_LOC);
-  if(decrypt_n_compare(buffer,&s,CAR_UNLOCK_ID,nonce)){
+  if(decrypt_n_compare(buffer,&s,nonce)){
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     startCar((char*) buffer+4);
   }
@@ -116,7 +116,7 @@ void startCar(char* buffer) {
   for (int i = 0; i < NUM_FEATURES; i++) {
     if(active[i]){
       uint8_t eeprom_message[64];
-      uint32_t offset = feature_info->features[i] * FEATURE_SIZE;
+      uint32_t offset = i+1 * FEATURE_SIZE;
       EEPROMRead((uint32_t *)eeprom_message, FEATURE_END - offset, FEATURE_SIZE);
       uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
     }

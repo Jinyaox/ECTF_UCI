@@ -131,7 +131,7 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *features, uint8_t num_active, uint8_t type)
+void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t feature, uint8_t type)
 {
   MESSAGE_PACKET message;
   uint8_t buffer[256];
@@ -139,16 +139,7 @@ void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t *
   memset(message.buffer, 0, 256);
   message.magic = type;
   uint8_t *arr = (uint8_t *) &nonce;
-  buffer[0]=arr[0]; buffer[1]=arr[1]; buffer[2]=arr[2]; buffer[3]=arr[3];
-  // add feature
-  for(int j = 0; j < num_active; j++)
-  {
-    uint8_t *feature = features+j;        
-    for(int i = 4 + FEATURE_SIZE * j; i < FEATURE_SIZE * (j+1) + 4; i++)
-    {
-      buffer[i] = feature[i-8-FEATURE_SIZE*j];
-    }
-  }
+  buffer[0]=arr[0]; buffer[1]=arr[1]; buffer[2]=arr[2]; buffer[3]=arr[3]; buffer[4]=feature;
   tc_aes_encrypt(message.buffer, message.buffer, s);
   message.message_len=strlen((const char*) message.buffer);
   send_board_message(&message);

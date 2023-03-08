@@ -69,7 +69,7 @@ void startCar(FLASH_DATA *fob_state_ram);
 int main(void)
 {
   FLASH_DATA fob_state_ram;
-  memset(&fob_state_ram, 0, FLASH_DATA_SIZE)
+  memset(&fob_state_ram, 0, FLASH_DATA_SIZE);
   FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR; //this is stored in flash some information
 
 // If paired fob, initialize the system information
@@ -167,16 +167,15 @@ int main(void)
 void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are active 
 {
   MESSAGE_PACKET message;
+  char buffer[256];
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
     struct tc_aes_key_sched_struct s;
-    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT);
-    message.buffer=char[256];
+    generate_encrypt_key(&s, HOST_FOB_SECT);
+    message.buffer=buffer;
     message.magic=PAIR_MAGIC;
     memset(message.buffer,0,256);
-    EEPROMRead(message.buffer, AES_SECRET_LOC , 16);
-
-    //from 16 to whatever will be all feature information, put them in buffer
+    EEPROMRead((uint32_t *)message.buffer, AES_SECRET_LOC , 16);
     message.buffer[16] = fob_state_ram->active_features;
     tc_aes_encrypt(message.buffer, message.buffer, &s);
     message.message_len=strlen((const char*) message.buffer);
@@ -188,15 +187,13 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
   {
     struct tc_aes_key_sched_struct s;
     
-    generate_encrypt_key(&s, uint32_t HOST/FOB_SECT); 
-    message.buffer=char[256];
+    generate_encrypt_key(&s, HOST_FOB_SECT); 
+    message.buffer=buffer;
     memset(message.buffer,0,256);
     receive_board_message_by_type(&message, PAIR_MAGIC,-1);
-    //decrypt the whole thing and get first 16 bytes as AES, write to EEPROM, the rest last byte is feature info, in ram then save
     tc_aes_decrypt(message.buffer, message.buffer, &s);
-    EEPROMPROGRAM(message.buffer, AES_SECRET_LOC, 16);
+    EEPROMProgram((uint32_t *)message.buffer, AES_SECRET_LOC, 16);
     fob_state_ram->active_features = message.buffer[16];
-    
     fob_state_ram->paired = FLASH_PAIRED;
     uart_write(HOST_UART, (uint8_t *)"Paired", 6);
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
@@ -224,7 +221,7 @@ void enableFeature(FLASH_DATA *fob_state_ram)
     {
       return;
     }
-    strncpy(fob_state_ram->active_features,enable_message->feature,1);
+    fob_state_ram->active_features=enable_message->feature;
 
     saveFobState(fob_state_ram);
     uart_write(HOST_UART, (uint8_t *)"Enabled", 7);
@@ -240,20 +237,20 @@ void unlockCar(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    FEATURE_DATA* feature_info = &fob_state_ram->feature_info;
+    uint8_t feature_info = fob_state_ram->active_features;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
-    char buffer[256];
+    char buffer[4];
     message.buffer = buffer;
     struct tc_aes_key_sched_struct s;
-    memset(message.buffer, 0, 256);
+    memset(message.buffer, 0, 4);
 
     receive_board_message_by_type(&message, NONCE_MAGIC, TIMEOUT);
     if (message.message_len != -1){
       generate_encrypt_key(&s, AES_SECRET_LOC);
-      encrypt_n_send(CAR_UNLOCK_ID, &s, (uint32_t)message.buffer, feature_info->features, feature_info->num_active, UNLOCK_MAGIC);
+      encrypt_n_send(&s, (uint32_t)message.buffer, feature_info, UNLOCK_MAGIC);
     }
-    memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); tive_feat
+    memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     memset(message.buffer, 0, 256);
   }
 }

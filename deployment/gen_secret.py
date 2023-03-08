@@ -24,11 +24,11 @@ def main():
     parser.add_argument("--secret-dirc", type=Path, required=True)
     args = parser.parse_args()
     sec_dir=args.secret_dirc
-    with open(str(sec_dir)+"global_secrets.txt","w") as f:
-        f.write(''.join(random.choices(string.ascii_letters + string.digits, k=1)))
+    with open(str(sec_dir)+"/global_secrets.txt","w") as f:
+        f.write(''.join(random.choices(string.ascii_letters + string.digits, k=16)))
     
     #for this, we create an empty file
-    with open(str(sec_dir)+'car_secrets.json', "w") as fp:
+    with open(str(sec_dir)+'/car_secrets.json', "w") as fp:
         json.dump(id_pin_pair, fp, indent=4)
     
 

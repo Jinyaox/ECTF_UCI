@@ -40,19 +40,19 @@ def main():
             fp.write("#define PAIRED 1\n")
             fp.write(f'#define CAR_ID "{args.car_id}"\n')
             fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
-            fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
+            fp.write(f"#define HOST_FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
-        with open(str(sec_dir)+f"id_pin_pair.txt","a") as f:
-            f.write('\n'+str(args.car_id)+",",)
+        # with open(str(sec_dir)+f"/id_pin_pair.txt","a") as f:
+        #     f.write('\n'+str(args.car_id)+",",)
 
-        with open(str(sec_dir)+'car_secrets.json', "r") as fp:
+        with open(str(sec_dir)+'/car_secrets.json', "r") as fp:
             id_pin_pair = json.load(fp)
         
         id_pin_pair[str(args.car_id)]=str(hash(str(args.pair_pin)))
         
-        with open(str(sec_dir)+'car_secrets.json', "w") as fp:
+        with open(str(sec_dir)+'/car_secrets.json', "w") as fp:
             json.dump(id_pin_pair, fp, indent=4)
         
     else:
@@ -67,7 +67,7 @@ def main():
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
-        with open(str(sec_dir)+f"Unpaired_fob_sec_eprom.txt","w") as f:
+        with open(str(sec_dir)+f"/Unpaired_fob_sec_eprom.txt","w") as f:
             f.write(''.join(random.choices("0", k=16)))
 
 

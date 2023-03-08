@@ -138,7 +138,7 @@ void regular_send(char* buffer,uint8_t type){
   send_board_message(&message);
 }
 
-bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t secret_loc, uint32_t nonce){
+bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t nonce){
   uint8_t buffer[16];
   memset(buffer,0,16);
   uint8_t *arr=(uint8_t*) &nonce;
