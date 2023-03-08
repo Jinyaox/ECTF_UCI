@@ -71,7 +71,7 @@ paired_fob: paired_fob_gen_secret
 
 # this must be the last build rule of `paired_fob`
 paired_fob: ${COMPILER}/firmware.axf
-paired_fob: copy_artifacts
+paired_fob: copy_artifacts_paired
 
 
 # this rule must come first in `unpaired_fob`
@@ -81,7 +81,7 @@ unpaired_fob: unpaired_fob_gen_secret
 
 # this must be the last build rule of `unpaired_fob`
 unpaired_fob: ${COMPILER}/firmware.axf
-unpaired_fob: copy_artifacts
+unpaired_fob: copy_artifacts_unpaired
 
 
 # build libraries
@@ -115,10 +115,21 @@ ${COMPILER}/firmware.axf: ${COMPILER}/aes_decrypt.o
 ${COMPILER}/firmware.axf: ${COMPILER}/aes_encrypt.o
 ${COMPILER}/firmware.axf: ${COMPILER}/utils.o
 
-copy_artifacts:
+# Created separate targets for paired and unpaired fob, this will prevent that unpaired fob from getting the shared car-fob secret before pairing.
+copy_artifacts_paired:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
-	cp ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${SECRETS_DIR}/global_secrets.txt ${EEPROM_PATH}
+	cat ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${SECRETS_DIR}/global_secrets.txt >> temp_hosting_file
+	cp temp_hosting_file ${EEPROM_PATH}
+	rm temp_hosting_file
+
+copy_artifacts_unpaired:
+	cp ${COMPILER}/firmware.bin ${BIN_PATH}
+	cp ${COMPILER}/firmware.axf ${ELF_PATH}
+	echo -n "0000000000000000" > dummy_car_key
+	cat dummy_car_key ${SECRETS_DIR}/global_secrets.txt >> temp_hosting_file
+	cp temp_hosting_file ${EEPROM_PATH}
+	rm temp_hosting_file dummy_car_key
 
 SCATTERgcc_firmware=${TIVA_ROOT}/firmware.ld
 ENTRY_firmware=Firmware_Startup

@@ -63,7 +63,7 @@ def main():
             fp.write("#define PAIRED 0\n")
             fp.write('#define CAR_ID "000000"\n')
             fp.write(f"#define AES_SECRET_LOC {sec_location}\n\n")
-            fp.write(f"#define HOST/FOB_SECT {glob_sec_location}\n\n")
+            fp.write(f"#define HOST_FOB_SECT {glob_sec_location}\n\n")
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
