@@ -24,28 +24,31 @@ def package(package_name, car_id, feature_number1, feature_number2, feature_numb
     # Pad id lenth to 8 bytes
     car_id_len = len(car_id)
     car_id_pad = (8 - car_id_len) * "\0"
-    f1=b'0x00'
-    f2=b'0x00'
-    f3=b'0x00'
+    f1=0x00
+    f2=0x00
+    f3=0x00
 
     if feature_number1:
-        f1=b'0x01'
+        f1=0x01
     if(feature_number2):
-        f2=b'0x02'
+        f2=0x02
     if(feature_number3):
-        f3=b'0x04'
-    res=f1&f2&f3 #this REALLY needs to be tested
+        f3=0x04
+    res=f1|f2|f3 #this REALLY needs to be tested
 
     # Create package to match defined structure on fob
     package_message_bytes = (
-        str.encode(car_id + car_id_pad)
-        + res
-        + str.encode("\n")
+        b''.join([str.encode(car_id+car_id_pad),res.to_bytes(1, 'big'),str.encode("\n")])
     )
 
     # Write data out to package file
     # /package_dir/ is the mounted location inside the container - should not change
+
     with open(f"/package_dir/{package_name}", "wb") as fhandle:
+        fhandle.write(package_message_bytes)
+
+    # Testing
+    with open(f"{package_name}", "wb") as fhandle:
         fhandle.write(package_message_bytes)
 
     print("Feature packaged")

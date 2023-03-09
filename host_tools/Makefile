@@ -12,5 +12,6 @@ all:
 	$(call check_defined TOOLS_OUT_DIR)
 	cp unlock_tool ${TOOLS_OUT_DIR}/unlock_tool
 	cp pair_tool ${TOOLS_OUT_DIR}/pair_tool
+	cp encryption ${TOOLS_OUT_DIR}/encryption.py
 	cp enable_tool ${TOOLS_OUT_DIR}/enable_tool
 	cp package_tool ${TOOLS_OUT_DIR}/package_tool
