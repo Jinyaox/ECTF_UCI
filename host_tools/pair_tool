@@ -9,7 +9,7 @@ import json
 import socket
 import argparse
 
-from encryption import Encrypt, nonce
+from encryption import Encrypt
 from Crypto.Hash import SHA256
 
 # store hashed pair pin in json file
@@ -51,12 +51,13 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
             pair_success += unpaired_sock.recv(16 - len(pair_success))
 
         plain_text = encryptor.decrypt(pair_success).decode()
-        received_nonce = plain_text[-4:]
-        with open('nonce.json', 'r') as n:
-            nonce = json.load()
-        if (received_nonce == nonce):
-            encryptor.update_nonce()
-            print("Paired")
+
+        # received_nonce = plain_text[-4:]
+        # with open('nonce.json', 'r') as n:
+        #    nonce = json.load()
+        # if (received_nonce == nonce):
+        #    encryptor.update_nonce()
+        print(plain_text)
 
     except socket.timeout:
         print("Failed to pair fob")
