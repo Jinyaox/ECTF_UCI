@@ -1,24 +1,106 @@
+# #!/usr/bin/python3 -u
+
+# # @file enable_tool
+# # @author Yiran Wang, Kenta
+# # @brief host tool for enabling a feature on a fob
+# # @date 2023
+# #
+
+# import json
+# import socket
+# import argparse
+
+# from encryption import Encrypt
+
+
+# # @brief Function to send commands to enable a feature on a fob
+# # @param fob_bridge, bridged serial connection to fob
+# # @param package_name, name of the package file to read from
+# def enable(fob_bridge, package_name):
+
+#     encryptor = Encrypt()
+
+#     # Connect fob socket to serial
+#     fob_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     fob_sock.connect(("ectf-net", int(fob_bridge)))
+
+#     # Send enable command to fob
+#     fob_sock.send(b"enable\n")
+
+#     # Open and read binary data from package file
+#     with open(f"/package_dir/{package_name}", "rb") as fhandle:
+#         message = fhandle.read()
+
+#     # Send package to fob
+#     encrypted_message = encryptor.encrypt(message) # need to add padding and nonce
+#     fob_sock.send(encrypted_message)
+
+#     # Set timeout for if enable fails
+#     fob_sock.settimeout(5)
+#     # Try to receive data - if failed, enabling failed
+#     try:
+#         enable_success = fob_sock.recv(16)
+
+#         while len(enable_success) != 16:
+#             enable_success += fob_sock.recv(16 - len(enable_success))
+
+#         plain_text = encryptor.decrypt(enable_success).decode
+#         received_nonce = plain_text[-4:]
+#         with open('nonce.json', 'r') as n:
+#             nonce = json.load(n)
+#         if (received_nonce == nonce):
+#             encryptor.update_nonce()
+#             paprint("Enabled")
+
+#     except socket.timeout:
+#         print("Failed to enable feature")
+
+#     return 0
+
+
+# # @brief Main function
+# #
+# # Main function handles parsing arguments and passing them to program
+# # function.
+# def main():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument(
+#         "--fob-bridge", help="Bridge for the fob", type=int, required=True,
+#     )
+#     parser.add_argument(
+#         "--package-name", help="Name of the package file", type=str, required=True,
+#     )
+
+#     args = parser.parse_args()
+
+#     enable(args.fob_bridge, args.package_name)
+
+
+# if __name__ == "__main__":
+#     main()
+
 #!/usr/bin/python3 -u
 
 # @file enable_tool
-# @author Yiran Wang, Kenta
+# @author Frederich Stine
 # @brief host tool for enabling a feature on a fob
 # @date 2023
 #
+# This source file is part of an example system for MITRE's 2023 Embedded
+# CTF (eCTF). This code is being provided only for educational purposes for the
+# 2023 MITRE eCTF competition, and may not meet MITRE standards for quality.
+# Use this code at your own risk!
+#
+# @copyright Copyright (c) 2023 The MITRE Corporation
 
-import json
 import socket
 import argparse
-
-from encryption import Encrypt
 
 
 # @brief Function to send commands to enable a feature on a fob
 # @param fob_bridge, bridged serial connection to fob
 # @param package_name, name of the package file to read from
 def enable(fob_bridge, package_name):
-
-    encryptor = Encrypt()
 
     # Connect fob socket to serial
     fob_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,8 +114,7 @@ def enable(fob_bridge, package_name):
         message = fhandle.read()
 
     # Send package to fob
-    encrypted_message = encryptor.encrypt(message) # need to add padding and nonce
-    fob_sock.send(encrypted_message)
+    fob_sock.send(message)
 
     # Set timeout for if enable fails
     fob_sock.settimeout(5)
@@ -77,3 +158,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
