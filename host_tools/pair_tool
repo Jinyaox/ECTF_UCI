@@ -8,7 +8,6 @@
 import json
 import socket
 import argparse
-from encryption import *
 
 # @brief Function to send commands to pair
 # a new fob.
@@ -16,7 +15,6 @@ from encryption import *
 # @param pairmed_fob_bridge, bridged serial connection to pairmed fob
 # @param pair_pin, pin used to pair a new fob
 def pair(unpaired_fob_bridge, paired_fob_bridge):
-    encryptor = Encrypt("../secret/global_secrets.txt")
 
     # Connect to both sockets for serial
     unpaired_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,8 +24,8 @@ def pair(unpaired_fob_bridge, paired_fob_bridge):
     paired_sock.connect(("ectf-net", int(paired_fob_bridge)))
 
     # Send pair commands to both fobs
-    unpaired_sock.send(encryptor.encrypt("pair\n"))
-    paired_sock.send(encryptor.encrypt("pair\n"))
+    unpaired_sock.send(b"pair\n")
+    paired_sock.send(b"pair\n")
 
     # Set timeout for if pairing fails
     unpaired_sock.settimeout(5)

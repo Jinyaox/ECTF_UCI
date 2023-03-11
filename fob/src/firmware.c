@@ -212,8 +212,13 @@ void enableFeature(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    uint8_t uart_buffer[20];
+    uint8_t uart_buffer[64];
+    memset(uart_buffer,0,64);
     uart_readline(HOST_UART, uart_buffer);
+
+    struct tc_aes_key_sched_struct s;
+    generate_encrypt_key(&s, HOST_FOB_SECT);
+    tc_aes_decrypt(uart_buffer, uart_buffer, &s);
 
     ENABLE_PACKET *enable_message = (ENABLE_PACKET *)uart_buffer;
     if (strcmp((char *)fob_state_ram->car_id,
