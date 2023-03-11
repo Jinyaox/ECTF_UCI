@@ -33,6 +33,9 @@ class Encrypt:
     def encrypt(self, message):
         message_bytes = str.encode(message)
         return encryption(self.key, message_bytes)
+    
+    def encrypt_byte(self,message_byte):
+        return encryption(self.key, message_byte)
 
     def decrypt(self, cipher_text):
         return decryption(self.key, cipher_text)

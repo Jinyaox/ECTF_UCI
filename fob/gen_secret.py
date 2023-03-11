@@ -44,16 +44,15 @@ def main():
             fp.write("#endif\n")
         
         sec_dir=args.secret_dirc
-        # with open(str(sec_dir)+f"/id_pin_pair.txt","a") as f:
-        #     f.write('\n'+str(args.car_id)+",",)
 
         with open(str(sec_dir)+'/car_secrets.json', "r") as fp:
             id_pin_pair = json.load(fp)
         
         id_pin_pair[str(args.car_id)]=str(hash(str(args.pair_pin)))
+        json_object = json.dumps(id_pin_pair, indent=4)
         
         with open(str(sec_dir)+'/car_secrets.json', "w") as fp:
-            json.dump(id_pin_pair, fp, indent=4)
+            fp.write(json_object)
         
     else:
         # Write to header file

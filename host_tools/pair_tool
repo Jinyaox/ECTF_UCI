@@ -8,21 +8,15 @@
 import json
 import socket
 import argparse
-
-from encryption import Encrypt, nonce
-from Crypto.Hash import SHA256
-
-# store hashed pair pin in json file
-
+from encryption import *
 
 # @brief Function to send commands to pair
 # a new fob.
 # @param unpairmed_fob_bridge, bridged serial connection to unpairmed fob
 # @param pairmed_fob_bridge, bridged serial connection to pairmed fob
 # @param pair_pin, pin used to pair a new fob
-def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
-
-    encryptor = Encrypt()
+def pair(unpaired_fob_bridge, paired_fob_bridge):
+    encryptor = Encrypt("../secret/global_secrets.txt")
 
     # Connect to both sockets for serial
     unpaired_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,31 +26,19 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pair_pin):
     paired_sock.connect(("ectf-net", int(paired_fob_bridge)))
 
     # Send pair commands to both fobs
-    unpaired_sock.send(b"pair\n")
-    paired_sock.send(b"pair\n")
-
-    # Send pin to the paired fob
-    encrypted_pair_pin = encryptor.encrypt(pair_pin)
-    pair_pin_bytes = encrypted_pair_pin + str.encode("\n")
-    paired_sock.send(pair_pin_bytes)
+    unpaired_sock.send(encryptor.encrypt("pair\n"))
+    paired_sock.send(encryptor.encrypt("pair\n"))
 
     # Set timeout for if pairing fails
     unpaired_sock.settimeout(5)
     
     # Try to receive data - if failed, pairing failed
     try:
-        pair_success = unpaired_sock.recv(16)
+        pair_success = unpaired_sock.recv(6)
+        while len(pair_success) != 6:
+            pair_success += unpaired_sock.recv(6 - len(pair_success))
 
-        while len(pair_success) != 16:
-            pair_success += unpaired_sock.recv(16 - len(pair_success))
-
-        plain_text = encryptor.decrypt(pair_success).decode()
-        received_nonce = plain_text[-4:]
-        with open('nonce.json', 'r') as n:
-            nonce = json.load()
-        if (received_nonce == nonce):
-            encryptor.update_nonce()
-            print("Paired")
+        print(pair_success)
 
     except socket.timeout:
         print("Failed to pair fob")
@@ -88,18 +70,22 @@ def main():
 
     args = parser.parse_args()
 
-    # check if pair pin is valid
-    hash = SHA256.new()
-    hash.update(args.pair_pin)
-
     with open('../secret/car_secrets.json', 'r') as f:
-        pin_dict = json.loads()
-
-    if (hash.digest() in pin_dict.keys()):
-        pair(args.unpaired_fob_bridge, args.paired_fob_bridge, args.pair_pin)
+        pin_dict = json.load(f)
+    
+    if hash(args.pair_pin) in set(pin_dict.values()):
+        pair(args.unpaired_fob_bridge,args.paired_fob_bridge)
     else:
-        print("Invalid pairing pin")
+        print("failed pairing")
 
 
 if __name__ == "__main__":
+    # stub for testing below (uncomment them for running)
+    # dictionary = {
+    #     '123':hash('15245')
+    # }
+    # json_object = json.dumps(dictionary, indent=4)
+ 
+    # with open("car_secrets.json", "w") as outfile:
+    #     outfile.write(json_object)
     main()

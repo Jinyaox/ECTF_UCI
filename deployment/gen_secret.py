@@ -28,8 +28,9 @@ def main():
         f.write(''.join(random.choices(string.ascii_letters + string.digits, k=16)))
     
     #for this, we create an empty file
+    json_object = json.dumps(id_pin_pair, indent=4) 
     with open(str(sec_dir)+'/car_secrets.json', "w") as fp:
-        json.dump(id_pin_pair, fp, indent=4)
+        fp.write(json_object)
     
 
 if __name__ == "__main__":
