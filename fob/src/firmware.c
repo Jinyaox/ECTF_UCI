@@ -246,6 +246,7 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
     char buffer[4];
+    message.magic= 0;
     message.buffer = buffer;
     struct tc_aes_key_sched_struct s;
     memset(message.buffer, 0, 4);

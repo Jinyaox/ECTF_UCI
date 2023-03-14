@@ -33,7 +33,7 @@ void startCar(char* buffer);
 // Declare password
 const uint8_t car_id[] = CAR_ID;
 
-uint32_t nonce;
+uint32_t nonce=5;
 
 /**
  * @brief Main function for the car example
@@ -72,6 +72,7 @@ void unlockCar() {
   // Create a message struct variable for receiving data
   MESSAGE_PACKET message;
   uint8_t buffer[256];
+  message.magic= 0;
   message.buffer = buffer;
   struct tc_aes_key_sched_struct s;
   memset(message.buffer,0,256);

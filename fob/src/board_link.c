@@ -82,12 +82,16 @@ uint32_t send_board_message(MESSAGE_PACKET *message) {
  * @return uint32_t the number of bytes received - 0 for error
  */
 uint32_t receive_board_message(MESSAGE_PACKET *message) {
-  message->magic = (uint8_t)UARTCharGet(BOARD_UART);
+  if (UARTCharsAvail(BOARD_UART)) {
+    message->magic = (uint8_t)UARTCharGet(BOARD_UART);
+  }
 
   if (message->magic == 0) {
     return 0;
   }
-  message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
+  if (UARTCharsAvail(BOARD_UART)) {
+    message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
+  }
 
   for (int i = 0; i < message->message_len; i++) {
     message->buffer[i] = (uint8_t)UARTCharGet(BOARD_UART);
