@@ -44,11 +44,9 @@ def package(package_name, car_id, feature_number1, feature_number2, feature_numb
     # Write data out to package file
     # /package_dir/ is the mounted location inside the container - should not change
 
-    with open(f"/package_dir/{package_name}", "wb") as fhandle:
-        fhandle.write(package_message_bytes)
+    print(package_message_bytes) #for testing only
 
-    # Testing
-    with open(f"{package_name}", "wb") as fhandle:
+    with open(f"/package_dir/{package_name}", "wb") as fhandle:
         fhandle.write(package_message_bytes)
 
     print("Feature packaged")
