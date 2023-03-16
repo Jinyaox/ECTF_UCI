@@ -56,7 +56,7 @@ int main(void) {
     char arr[8]; memset(arr,0,8);
     strncpy(arr,(char*) &nonce,4);
     regular_send(arr,NONCE_MAGIC);
-    nonce++; //this is just a stub for debugging
+    //nonce++; //this is just a stub for debugging
     unlockCar();
   }
 }
@@ -87,12 +87,6 @@ void unlockCar() {
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     memset(buffer,0,256);
   }
-
-  //at this point:
-  // 1. the buffer is fully decrypted
-  // 2. the key is no longer active and memory cleared
-  // 3. if decrypt_n_compare works, (first 20 bytes are unlock info, rest are feature info)
-  // 4. if decrypt_n_compare not work, clear the whole buffer, go back to while loop
 }
 
 

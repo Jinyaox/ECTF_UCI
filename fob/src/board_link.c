@@ -81,15 +81,16 @@ uint32_t send_board_message(MESSAGE_PACKET *message) {
  * @param message pointer to message where data will be received
  * @return uint32_t the number of bytes received - 0 for error
  */
-uint32_t receive_board_message(MESSAGE_PACKET *message) {
-  if (UARTCharsAvail(BOARD_UART)) {
+uint32_t receive_board_message(MESSAGE_PACKET *message, uint8_t type) {
+
+  if(uart_avail(BOARD_UART)){
     message->magic = (uint8_t)UARTCharGet(BOARD_UART);
   }
 
-  if (message->magic == 0) {
+  if (message->magic != type) {
     return 0;
   }
-  if (UARTCharsAvail(BOARD_UART)) {
+  if(uart_avail(BOARD_UART)){
     message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
   }
 
@@ -110,19 +111,19 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
  * @param type the type of message to receive
  * @return uint32_t the number of bytes received
  */
-uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout) {
+uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, int timeout) {
   if(timeout<0){
     do {
-      receive_board_message(message);
+      receive_board_message(message,type);
     } while (message->magic != type);
   }
   else{
     do {
-      receive_board_message(message);
+      receive_board_message(message, type);
       timeout--;
     } while ((message->magic != type)&&(timeout!=0));
     if(message->magic != type){
-      message->message_len=-1;//basically saying not okay 
+      message->message_len=0;//basically saying not okay 
     }
   }
   return message->message_len;
@@ -135,20 +136,11 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   tc_aes128_set_encrypt_key(s, nist_key);
 }
 
-void encrypt_n_send(struct tc_aes_key_sched_struct *s, uint32_t nonce, uint8_t feature, uint8_t type)
+void encrypt_n_send(struct tc_aes_key_sched_struct *s, MESSAGE_PACKET *message, uint8_t feature, uint8_t type)
 {
-  MESSAGE_PACKET message;
-  uint8_t buffer[256];
-  message.buffer = buffer;
-  memset(message.buffer, 0, 256);
-  message.magic = type;
-  uint8_t *arr = (uint8_t *) &nonce;
-  buffer[0]=arr[0]; buffer[1]=arr[1]; buffer[2]=arr[2]; buffer[3]=arr[3]; buffer[4]=feature;
-  tc_aes_encrypt(message.buffer, message.buffer, s);
-  message.message_len=strlen((const char*) message.buffer);
-  send_board_message(&message);
-}
-int bitExtracted(int number, int k, int p)
-{
-    return (((1 << k) - 1) & (number >> (p - 1)));
+  message->magic = type;
+  message->buffer[strlen(message->buffer)]=feature;
+  tc_aes_encrypt(message->buffer, message->buffer, s);
+  message->message_len=strlen((const char*) message->buffer);
+  send_board_message(message);
 }

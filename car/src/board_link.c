@@ -72,32 +72,6 @@ uint32_t send_board_message(MESSAGE_PACKET *message) {
 }
 
 /**
- * @brief Receive a message between boards
- *
- * @param message pointer to message where data will be received
- * @return uint32_t the number of bytes received - 0 for error
- */
-uint32_t receive_board_message(MESSAGE_PACKET *message) {
-  if (UARTCharsAvail(BOARD_UART)) {
-    message->magic = (uint8_t)UARTCharGet(BOARD_UART);
-  }
-
-  if (message->magic == 0) {
-    return 0;
-  }
-
-  if (UARTCharsAvail(BOARD_UART)) {
-    message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
-  }
-
-  for (int i = 0; i < message->message_len; i++) {
-    message->buffer[i] = (uint8_t)UARTCharGet(BOARD_UART);
-  }
-
-  return message->message_len;
-}
-
-/**
  * @brief Function that retreives messages until the specified message is found
  *
  * @param message pointer to message where data will be received
@@ -105,18 +79,16 @@ uint32_t receive_board_message(MESSAGE_PACKET *message) {
  * @return uint32_t the number of bytes received
  */
 uint32_t receive_board_message_by_type(MESSAGE_PACKET *message, uint8_t type, uint32_t timeout) {
-  if(timeout<0){
-    do {
-      receive_board_message(message);
-    } while (message->magic != type);
+  while ((message->magic != type)&&(timeout!=0)){
+    if(uart_avail(BOARD_UART)){
+      message->magic = (uint8_t)UARTCharGet(BOARD_UART);
+    }
+    timeout--;
   }
-  else{
-    do {
-      receive_board_message(message);
-      timeout--;
-    } while ((message->magic != type)&&(timeout!=0));
-    if(message->magic != type){
-      message->message_len=-1;//basically saying not okay 
+  if(message->magic == type){
+    message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
+    for (int i = 0; i < message->message_len; i++) {
+      message->buffer[i] = (uint8_t)UARTCharGet(BOARD_UART);
     }
   }
   return message->message_len;
@@ -144,10 +116,9 @@ void regular_send(char* buffer,uint8_t type){
 }
 
 bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t nonce){
-  uint8_t buffer[16];
-  memset(buffer,0,16);
-  uint8_t *arr=(uint8_t*) &nonce;
+  uint8_t arr[4];
+  strncpy(arr,(char*) &nonce,4);
   tc_aes_decrypt(in,in,s);
-  buffer[0]=arr[0]; buffer[0]=arr[1]; buffer[0]=arr[2]; buffer[0]=arr[3];
-  return strncmp((const char*)buffer,(const char*)in,4)==0;
+  bool result=(strncmp((const char*)arr,(const char*)in,4)==0);
+  return result;
 }

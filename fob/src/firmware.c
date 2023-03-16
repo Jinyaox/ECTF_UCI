@@ -32,7 +32,6 @@
 // Definitions for unlock message location in EEPROM
 #define UNLOCK_EEPROM_LOC 0x7C0
 #define UNLOCK_EEPROM_SIZE 64
-#define TIMEOUT 100000
 
 /*** Structure definitions ***/
 // Defines a struct for the format of an enable message
@@ -96,6 +95,10 @@ int main(void)
 
   // Initialize UART
   uart_init();
+
+  // Initialize EEPROM
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  EEPROMInit();
 
   // Initialize board link UART
   setup_board_link();
@@ -245,19 +248,19 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     uint8_t feature_info = fob_state_ram->active_features;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
-    char buffer[4];
+    char buffer[8];
     message.magic= 0;
     message.buffer = buffer;
     struct tc_aes_key_sched_struct s;
-    memset(message.buffer, 0, 4);
+    memset(message.buffer, 0, 8);
 
-    receive_board_message_by_type(&message, NONCE_MAGIC, TIMEOUT);
-    if (message.message_len != -1){
+    receive_board_message_by_type(&message, NONCE_MAGIC, -1);
+    if (message.message_len != 0){
       generate_encrypt_key(&s, AES_SECRET_LOC);
-      encrypt_n_send(&s, (uint32_t)message.buffer, feature_info, UNLOCK_MAGIC);
+      encrypt_n_send(&s, &message, feature_info, UNLOCK_MAGIC);
     }
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
-    memset(message.buffer, 0, 256);
+    memset(message.buffer, 0, 8);
   }
 }
 
