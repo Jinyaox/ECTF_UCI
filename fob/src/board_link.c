@@ -85,17 +85,14 @@ uint32_t receive_board_message(MESSAGE_PACKET *message, uint8_t type) {
 
   if(uart_avail(BOARD_UART)){
     message->magic = (uint8_t)UARTCharGet(BOARD_UART);
+    message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
+    for (int i = 0; i < message->message_len; i++) {
+      message->buffer[i] = (uint8_t)UARTCharGet(BOARD_UART);
+    }
   }
 
   if (message->magic != type) {
     return 0;
-  }
-  if(uart_avail(BOARD_UART)){
-    message->message_len = (uint8_t)UARTCharGet(BOARD_UART);
-  }
-
-  for (int i = 0; i < message->message_len; i++) {
-    message->buffer[i] = (uint8_t)UARTCharGet(BOARD_UART);
   }
 
   return message->message_len;

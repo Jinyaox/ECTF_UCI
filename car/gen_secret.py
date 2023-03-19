@@ -26,17 +26,11 @@ def main():
     parser.add_argument("--header-file", type=Path, required=True)
     args = parser.parse_args()
 
-    # Open the secret file if it exists
-    # if args.secret_file.exists():
-    #     print(args.secret_file)
-    #     with open(args.secret_file, "r") as fp:
-    #         secret = json.load(fp)
-    # else:
     secret = {}
     
     #generate an actual secret stored in EEPROM for encryption and decription 
     car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-    secret[str(args.car_id)] = car_secret+str(args.car_id) #this should give about 22 bytes
+    secret[str(args.car_id)] = car_secret #+str(args.car_id) #this should give about 22 bytes
 
     sec_location=0x0
 

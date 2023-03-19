@@ -56,8 +56,8 @@ int main(void) {
     char arr[8]; memset(arr,0,8);
     strncpy(arr,(char*) &nonce,4);
     regular_send(arr,NONCE_MAGIC);
-    //nonce++; //this is just a stub for debugging
     unlockCar();
+    nonce++;
   }
 }
 
@@ -116,4 +116,5 @@ void startCar(char* buffer) {
       uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
     }
   }
+  uart_write(HOST_UART, "UNLOCK", 7);
 }

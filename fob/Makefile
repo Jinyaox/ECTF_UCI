@@ -120,6 +120,7 @@ copy_artifacts_paired:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
 	cat ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${SECRETS_DIR}/global_secrets.txt >> temp_hosting_file
+	echo ${PAIR_PIN} >> temp_hosting_file
 	cp temp_hosting_file ${EEPROM_PATH}
 	rm temp_hosting_file
 
