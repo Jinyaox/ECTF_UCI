@@ -33,10 +33,10 @@ def pair(unpaired_fob_bridge, paired_fob_bridge, pin):
     # Try to receive data - if failed, pairing failed
     try:
         pair_success = unpaired_sock.recv(6)
-        print(pair_success)
+        print("Fob paired")
 
     except socket.timeout:
-        print("Failed to pair fob")
+        print("Failed to pair fob, please reset both fobs")
 
     return 0
 

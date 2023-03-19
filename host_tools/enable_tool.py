@@ -9,13 +9,11 @@
 import json
 import socket
 import argparse
-from encryption import *
 
 # @brief Function to send commands to enable a feature on a fob
 # @param fob_bridge, bridged serial connection to fob
 # @param package_name, name of the package file to read from
 def enable(fob_bridge, package_name):
-    encryptor = Encrypt("../secret/global_secrets.txt")
 
     # Connect fob socket to serial
     fob_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,16 +27,13 @@ def enable(fob_bridge, package_name):
         message = fhandle.read()
 
     # Send package to fob
-    fob_sock.send(encryptor.encrypt_byte(message))
+    fob_sock.send(message)
 
     # Set timeout for if enable fails
     fob_sock.settimeout(5)
     # Try to receive data - if failed, enabling failed
     try:
         enable_success = fob_sock.recv(16)
-
-        while len(enable_success) != 16:
-            enable_success += fob_sock.recv(16 - len(enable_success))
 
         print("Enabled")
 

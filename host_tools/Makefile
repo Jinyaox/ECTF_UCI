@@ -12,11 +12,12 @@ all:
 	$(call check_defined TOOLS_OUT_DIR)
 	cp unlock_tool.py ${TOOLS_OUT_DIR}/unlock_tool
 	cp pair_tool.py ${TOOLS_OUT_DIR}/pair_tool
-	cp encryption.py ${TOOLS_OUT_DIR}/encryption
-	cp enable_tool ${TOOLS_OUT_DIR}/enable_tool
+	cp encryption.py ${TOOLS_OUT_DIR}/encryption.py
+	cp enable_tool.py ${TOOLS_OUT_DIR}/enable_tool
 	cp package_tool.py ${TOOLS_OUT_DIR}/package_tool
 	cp encrypt.c ${TOOLS_OUT_DIR}/encrypt.c
 	cp constants.h ${TOOLS_OUT_DIR}/constants.h
 	cc -fPIC -shared -o ${TOOLS_OUT_DIR}/encryptlib.so ${TOOLS_OUT_DIR}/encrypt.c
 
 	chmod +x ${TOOLS_OUT_DIR}/pair_tool
+	chmod +x ${TOOLS_OUT_DIR}/enable_tool

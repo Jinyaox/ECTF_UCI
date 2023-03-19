@@ -13,6 +13,7 @@
 # @copyright Copyright (c) 2023 The MITRE Corporation
 
 import argparse
+from encryption import *
 
 
 # @brief Function to create a new feature package
@@ -20,7 +21,7 @@ import argparse
 # @param car_id, the id of the car the feature is being packaged for
 # @param feature_number, the feature number being packaged
 def package(package_name, car_id, feature_number1, feature_number2, feature_number3):
-
+    encryptor = Encrypt("/secrets/global_secrets.txt")
     # Pad id lenth to 8 bytes
     car_id_len = len(car_id)
     car_id_pad = (8 - car_id_len) * "\0"
@@ -44,10 +45,8 @@ def package(package_name, car_id, feature_number1, feature_number2, feature_numb
     # Write data out to package file
     # /package_dir/ is the mounted location inside the container - should not change
 
-    print(package_message_bytes) #for testing only
-
     with open(f"/package_dir/{package_name}", "wb") as fhandle:
-        fhandle.write(package_message_bytes)
+        fhandle.write(encryptor.encrypt_byte(package_message_bytes))
 
     print("Feature packaged")
 
