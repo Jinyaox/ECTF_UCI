@@ -244,7 +244,7 @@ void enableFeature(FLASH_DATA *fob_state_ram)
     }
 
     struct tc_aes_key_sched_struct s;
-    generate_encrypt_key(&s, HOST_FOB_SECT);
+    generate_encrypt_key(&s, AES_SECRET_LOC);
     tc_aes_decrypt(buffer, buffer, &s);
     if(strncmp(fob_state_ram->car_id,buffer+1,6)!=0){
       return;

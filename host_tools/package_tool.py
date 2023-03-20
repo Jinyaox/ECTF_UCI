@@ -21,7 +21,7 @@ from encryption import *
 # @param car_id, the id of the car the feature is being packaged for
 # @param feature_number, the feature number being packaged
 def package(package_name, car_id, feature_number1, feature_number2, feature_number3):
-    encryptor = Encrypt("/secrets/global_secrets.txt")
+    encryptor = Encrypt(f"/secrets/{car_id}_sec_eprom.txt")
     # Pad id lenth to 8 bytes
     car_id_len = len(car_id)
     car_id_pad = (8 - car_id_len) * "\0"
