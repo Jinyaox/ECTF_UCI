@@ -237,21 +237,19 @@ void enableFeature(FLASH_DATA *fob_state_ram)
 {
   if (fob_state_ram->paired == FLASH_PAIRED)
   {
-    uint8_t uart_buffer[64];
-    memset(uart_buffer,0,64);
-    uart_readline(HOST_UART, uart_buffer);
+    uint8_t buffer[64];
+    memset(buffer,0,64);
+    for (int i = 0; i < 16; i++) {
+      buffer[i] = (uint8_t)UARTCharGet(HOST_UART);
+    }
 
     struct tc_aes_key_sched_struct s;
     generate_encrypt_key(&s, HOST_FOB_SECT);
-    tc_aes_decrypt(uart_buffer, uart_buffer, &s);
-
-    ENABLE_PACKET *enable_message = (ENABLE_PACKET *)uart_buffer;
-    if (strcmp((char *)fob_state_ram->car_id,
-               (char *)enable_message->car_id))
-    {
+    tc_aes_decrypt(buffer, buffer, &s);
+    if(strncmp(fob_state_ram->car_id,buffer+1,6)!=0){
       return;
     }
-    fob_state_ram->active_features=enable_message->feature;
+    fob_state_ram->active_features=buffer[0];
 
     saveFobState(fob_state_ram);
     uart_write(HOST_UART, (uint8_t *)"Enabled", 7);

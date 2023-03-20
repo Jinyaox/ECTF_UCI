@@ -39,7 +39,7 @@ def package(package_name, car_id, feature_number1, feature_number2, feature_numb
 
     # Create package to match defined structure on fob
     package_message_bytes = (
-        b''.join([str.encode(car_id+car_id_pad),res.to_bytes(1, 'big'),str.encode("\n")])
+        b''.join([res.to_bytes(1, 'big'),str.encode(car_id+car_id_pad),str.encode("\n")])
     )
 
     # Write data out to package file
