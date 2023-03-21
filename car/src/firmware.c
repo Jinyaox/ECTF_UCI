@@ -82,6 +82,7 @@ void unlockCar() {
   if(decrypt_n_compare(buffer,&s,nonce)){
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     startCar((char*) buffer);
+    memset(buffer,0,256);
   }
   else{
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
@@ -111,10 +112,12 @@ void startCar(char* buffer) {
   for (int i = 0; i < NUM_FEATURES; i++) {
     if(active[i]){
       uint8_t eeprom_message[64];
-      uint32_t offset = i+1 * FEATURE_SIZE;
+      uint32_t offset = (i+1) * FEATURE_SIZE;
       EEPROMRead((uint32_t *)eeprom_message, FEATURE_END - offset, FEATURE_SIZE);
       uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
     }
   }
-  uart_write(HOST_UART, "UNLOCK", 7);
+  uint8_t unlock_message[64]; memset(unlock_message,0,64);
+  EEPROMRead((uint32_t *)unlock_message, FEATURE_END, FEATURE_SIZE);
+  uart_write(HOST_UART, "UNLOCK", 64);
 }

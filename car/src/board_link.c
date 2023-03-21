@@ -119,6 +119,7 @@ bool decrypt_n_compare(uint8_t *in, struct tc_aes_key_sched_struct* s, uint32_t 
   uint8_t arr[4];
   strncpy(arr,(char*) &nonce,4);
   tc_aes_decrypt(in,in,s);
+  uint8_t n=in[1];
   bool result=(strncmp((const char*)arr,(const char*)in+1,4)==0);
   return result;
 }
