@@ -132,12 +132,3 @@ void generate_encrypt_key(struct tc_aes_key_sched_struct* s, uint32_t secret_loc
   EEPROMRead((uint32_t *) nist_key, secret_loc , 16); //now we get the key, maybe
   tc_aes128_set_encrypt_key(s, nist_key);
 }
-
-void encrypt_n_send(struct tc_aes_key_sched_struct *s, MESSAGE_PACKET *message, uint8_t feature, uint8_t type)
-{
-  message->magic = type;
-  message->buffer[strlen(message->buffer)]=feature;
-  tc_aes_encrypt(message->buffer, message->buffer, s);
-  message->message_len=strlen((const char*) message->buffer);
-  send_board_message(message);
-}

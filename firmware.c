@@ -268,19 +268,22 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     uint8_t feature_info = fob_state_ram->active_features;
     // Create a message struct variable for receiving data
     MESSAGE_PACKET message;
-    char buffer[8];
+    char buffer[64];
+    memset(buffer, 0, 64);
+    buffer[0]=feature_info;
     message.magic= 0;
-    message.buffer = buffer;
+    message.buffer = buffer+1;
     struct tc_aes_key_sched_struct s;
-    memset(message.buffer, 0, 8);
 
     receive_board_message_by_type(&message, NONCE_MAGIC, -1);
-    if (message.message_len != 0){
-      generate_encrypt_key(&s, AES_SECRET_LOC);
-      encrypt_n_send(&s, &message, feature_info, UNLOCK_MAGIC);
-    }
+    generate_encrypt_key(&s, AES_SECRET_LOC);
+    message.magic=UNLOCK_MAGIC;
+    tc_aes_encrypt((message.buffer)-1, (message.buffer)-1, &s);
+    message.message_len=strlen(message.buffer-1);
+    message.buffer = buffer;
+    send_board_message(&message);
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
-    memset(message.buffer, 0, 8);
+    memset(message.buffer, 0, 64);
   }
 }
 
