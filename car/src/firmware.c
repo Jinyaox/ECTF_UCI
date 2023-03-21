@@ -119,5 +119,5 @@ void startCar(char* buffer) {
   }
   uint8_t unlock_message[64]; memset(unlock_message,0,64);
   EEPROMRead((uint32_t *)unlock_message, FEATURE_END, FEATURE_SIZE);
-  uart_write(HOST_UART, "UNLOCK", 64);
+  uart_write(HOST_UART, unlock_message, 64);
 }

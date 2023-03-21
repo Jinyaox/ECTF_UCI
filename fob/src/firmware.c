@@ -216,7 +216,8 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
     receive_board_message_by_type(&message, PAIR_MAGIC,-1);
     tc_aes_decrypt(message.buffer, message.buffer, &s);
     EEPROMProgram((uint32_t *)message.buffer, AES_SECRET_LOC, 16);
-    EEPROMProgram((uint32_t *)message.buffer+16, PIN, 8);
+    char* t=message.buffer+16;
+    EEPROMProgram((uint32_t *)t, 0x20, 8);
     fob_state_ram->active_features = message.buffer[22];
     strncpy(fob_state_ram->car_id, message.buffer+23,6);
     fob_state_ram->paired = FLASH_PAIRED;
