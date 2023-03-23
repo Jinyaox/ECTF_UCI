@@ -51,14 +51,13 @@ paired_fob_arg_check:
 	$(call check_defined, CAR_ID PAIR_PIN SECRETS_DIR BIN_PATH ELF_PATH EEPROM_PATH)
 
 paired_fob_gen_secret:
-	python3 gen_secret.py --car-id ${CAR_ID} --pair-pin ${PAIR_PIN} --secret-file ${SECRETS_DIR}/car_secrets.json --header-file inc/secrets.h --paired
-
+	python3 gen_secret.py --car-id ${CAR_ID} --secret-dirc ${SECRETS_DIR} --pair-pin ${PAIR_PIN} --secret-file ${SECRETS_DIR}/car_secrets.json --header-file inc/secrets.h --paired
 
 unpaired_fob_arg_check:
 	$(call check_defined, SECRETS_DIR BIN_PATH ELF_PATH EEPROM_PATH)
 
 unpaired_fob_gen_secret:
-	python3 gen_secret.py --header-file inc/secrets.h
+	python3 gen_secret.py --secret-dirc ${SECRETS_DIR} --header-file inc/secrets.h
 
 
 ################ END fob customization ################
@@ -72,7 +71,7 @@ paired_fob: paired_fob_gen_secret
 
 # this must be the last build rule of `paired_fob`
 paired_fob: ${COMPILER}/firmware.axf
-paired_fob: copy_artifacts
+paired_fob: copy_artifacts_paired
 
 
 # this rule must come first in `unpaired_fob`
@@ -82,34 +81,7 @@ unpaired_fob: unpaired_fob_gen_secret
 
 # this must be the last build rule of `unpaired_fob`
 unpaired_fob: ${COMPILER}/firmware.axf
-unpaired_fob: copy_artifacts
-
-
-################ start crypto example ################
-# example AES rules to build in tiny-AES-c: https://github.com/kokke/tiny-AES-c
-# make sure submodule has been pulled (run `git submodule update --init`)
-# uncomment next line to activate
-# EXAMPLE_AES=foo
-ifdef EXAMPLE_AES
-# path to crypto library
-CRYPTOPATH=${ROOT}/lib/tiny-AES-c
-
-# add path to crypto source files to source path
-VPATH+=${CRYPTOPATH}
-
-# add crypto library to includes path
-IPATH+=${CRYPTOPATH}
-
-# add crypto object file to includes path
-# LDFLAGS+=${COMPILER}/aes.o
-
-# add compiler flag to enable example AES code 
-CFLAGS+=-DEXAMPLE_AES
-
-# add rule to build crypto library
-${COMPILER}/firmware.axf: ${COMPILER}/aes.o
-endif
-################ end crypto example ################
+unpaired_fob: copy_artifacts_unpaired
 
 
 # build libraries
@@ -139,10 +111,26 @@ ${COMPILER}/firmware.axf: ${COMPILER}/firmware.o
 ${COMPILER}/firmware.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/firmware.axf: ${TIVA_ROOT}/driverlib/${COMPILER}/libdriver.a
 
-copy_artifacts:
+${COMPILER}/firmware.axf: ${COMPILER}/aes_decrypt.o 
+${COMPILER}/firmware.axf: ${COMPILER}/aes_encrypt.o
+${COMPILER}/firmware.axf: ${COMPILER}/utils.o
+
+# Created separate targets for paired and unpaired fob, this will prevent that unpaired fob from getting the shared car-fob secret before pairing.
+copy_artifacts_paired:
 	cp ${COMPILER}/firmware.bin ${BIN_PATH}
 	cp ${COMPILER}/firmware.axf ${ELF_PATH}
-	cp ${SECRETS_DIR}/global_secrets.txt ${EEPROM_PATH}
+	cat ${SECRETS_DIR}/${CAR_ID}_sec_eprom.txt ${SECRETS_DIR}/global_secrets.txt >> temp_hosting_file
+	echo ${PAIR_PIN} >> temp_hosting_file
+	cp temp_hosting_file ${EEPROM_PATH}
+	rm temp_hosting_file
+
+copy_artifacts_unpaired:
+	cp ${COMPILER}/firmware.bin ${BIN_PATH}
+	cp ${COMPILER}/firmware.axf ${ELF_PATH}
+	echo -n "0000000000000000" > dummy_car_key
+	cat dummy_car_key ${SECRETS_DIR}/global_secrets.txt >> temp_hosting_file
+	cp temp_hosting_file ${EEPROM_PATH}
+	rm temp_hosting_file dummy_car_key
 
 SCATTERgcc_firmware=${TIVA_ROOT}/firmware.ld
 ENTRY_firmware=Firmware_Startup

@@ -70,7 +70,6 @@ void startCar(FLASH_DATA *fob_state_ram);
 int main(void)
 {
   FLASH_DATA fob_state_ram;
-Reset:
   memset(&fob_state_ram, 0, FLASH_DATA_SIZE);
   FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR; //this is stored in flash some information
 
@@ -95,7 +94,9 @@ Reset:
     fob_state_ram.active_features = 0;
     saveFobState(&fob_state_ram);
   }
-  
+  //initialize watchdog timer (for receiving exceptions)
+  watchdog_setup();
+
   // Initialize UART
   uart_init();
 
@@ -170,7 +171,6 @@ Reset:
       if (debounce_sw_state == current_sw_state)
       {
         unlockCar(&fob_state_ram);
-        goto Reset;
       }
     }
     previous_sw_state = current_sw_state;
@@ -205,7 +205,7 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
     tc_aes_encrypt(message.buffer, message.buffer, &s);
     message.message_len=strlen((const char*) message.buffer)+strlen((const char*) (message.buffer+(strlen((const char*) message.buffer)+1)))+1;
     for(int i=0;i<10000;i++){
-      __asm(" NOP\n");
+      __asm('NOP');
     }
     send_board_message(&message);
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct)); 
@@ -291,6 +291,31 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     memset(message.buffer, 0, 64);
   }
 }
+
+void watchdog_handler(void){
+  WatchdogIntClear (WATCHDOG0_BASE);
+}
+
+
+void watchdog_setup(){
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0)){}
+
+    if(WatchdogLockState(WATCHDOG0_BASE)==true){
+        WatchdogUnlock(WATCHDOG0_BASE);
+    }
+
+    WatchdogReloadSet(WATCHDOG0_BASE,0xFFFFFFFF);
+
+    WatchdogResetEnable(WATCHDOG0_BASE);
+
+    IntEnable(INT_WATCHDOG);
+    IntRegister(INT_WATCHDOG, watchdog_handler);
+    WatchdogIntEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
+}
+
 
 /**
  * @brief Function that erases and rewrites the non-volatile data to flash

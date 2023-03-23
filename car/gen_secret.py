@@ -14,39 +14,43 @@
 
 import json
 import argparse
+import random, string
 from pathlib import Path
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--car-id", type=int, required=True)
+    parser.add_argument("--secret-dirc", type=Path, required=True)
     parser.add_argument("--secret-file", type=Path, required=True)
     parser.add_argument("--header-file", type=Path, required=True)
     args = parser.parse_args()
 
-    # Open the secret file if it exists
-    if args.secret_file.exists():
-        with open(args.secret_file, "r") as fp:
-            secrets = json.load(fp)
-    else:
-        secrets = {}
+    secret = {}
+    
+    #generate an actual secret stored in EEPROM for encryption and decription 
+    car_secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    secret[str(args.car_id)] = car_secret #+str(args.car_id) #this should give about 22 bytes
 
-    # Add dummy secret
-    car_secret = args.car_id + 1
-    secrets[str(args.car_id)] = car_secret
+    sec_location=0x0
 
     # Save the secret file
     with open(args.secret_file, "w") as fp:
-        json.dump(secrets, fp, indent=4)
+        json.dump(secret, fp, indent=4)
 
     # Write to header file
     with open(args.header_file, "w") as fp:
         fp.write("#ifndef __CAR_SECRETS__\n")
         fp.write("#define __CAR_SECRETS__\n\n")
-        fp.write(f"#define CAR_SECRET {car_secret}\n\n")
+        fp.write(f"#define CAR_SECRET_LOC {sec_location}\n\n")
         fp.write(f'#define CAR_ID "{args.car_id}"\n\n')
-        fp.write('#define PASSWORD "unlock"\n\n')
         fp.write("#endif\n")
+    
+    
+    #make sure write this thing to deployment
+    sec_dir=args.secret_dirc
+    with open(str(sec_dir)+f"/{args.car_id}_sec_eprom.txt","w") as f:
+        f.write(f"{secret[str(args.car_id)]}")
 
 
 if __name__ == "__main__":

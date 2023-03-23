@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceRoot}/car1.elf",
+            "armToolchainPath": "/usr/local/bin",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/ti-icdi.cfg",
+                "board/ti_ek-tm4c123gxl.cfg"
+            ],
+            "svdFile": "${workspaceRoot}/debug/TM4C123GH6PM.svd"
+        }
+    ]
+}
