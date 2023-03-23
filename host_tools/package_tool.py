@@ -23,7 +23,7 @@ from encryption import *
 def package(package_name, car_id, feature_number1, feature_number2, feature_number3):
     encryptor = Encrypt(f"/secrets/{car_id}_sec_eprom.txt")
     # Pad id lenth to 8 bytes
-    car_id_len = len(car_id)
+    car_id_len = len(str(car_id))
     car_id_pad = (8 - car_id_len) * "\0"
     f1=0x00
     f2=0x00
@@ -39,7 +39,7 @@ def package(package_name, car_id, feature_number1, feature_number2, feature_numb
 
     # Create package to match defined structure on fob
     package_message_bytes = (
-        b''.join([res.to_bytes(1, 'big'),str.encode(car_id+car_id_pad),str.encode("\n")])
+        b''.join([res.to_bytes(1, 'big'),str.encode(str(car_id)+car_id_pad),str.encode("\n")])
     )
 
     # Write data out to package file
@@ -61,7 +61,7 @@ def main():
         "--package-name", help="Name of the package file", type=str, required=True,
     )
     parser.add_argument(
-        "--car-id", help="Car ID", type=str, required=True,
+        "--car-id", help="Car ID", type=int, required=True,
     )
     parser.add_argument(
         "--feature-number1",
