@@ -4,10 +4,12 @@
 
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
 
 #include "driverlib/eeprom.h"
 #include "driverlib/flash.h"
 #include "driverlib/gpio.h"
+#include "driverlib/watchdog.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
@@ -92,6 +94,8 @@ int main(void)
     fob_state_ram.active_features = 0;
     saveFobState(&fob_state_ram);
   }
+  //initialize watchdog timer (for receiving exceptions)
+  watchdog_setup();
 
   // Initialize UART
   uart_init();
@@ -286,6 +290,30 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     memset(&s,0,sizeof(struct tc_aes_key_sched_struct));
     memset(message.buffer, 0, 64);
   }
+}
+
+void watchdog_handler(void){
+  WatchdogIntClear (WATCHDOG0_BASE);
+}
+
+
+void watchdog_setup(){
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0)){}
+
+    if(WatchdogLockState(WATCHDOG0_BASE)==true){
+        WatchdogUnlock(WATCHDOG0_BASE);
+    }
+
+    WatchdogReloadSet(WATCHDOG0_BASE,0xFFFFFFFF);
+
+    WatchdogResetEnable(WATCHDOG0_BASE);
+
+    IntEnable(INT_WATCHDOG);
+    IntRegister(INT_WATCHDOG, watchdog_handler);
+    WatchdogIntEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
 }
 
 

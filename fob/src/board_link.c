@@ -19,6 +19,7 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_uart.h"
+#include "driverlib/interrupt.h"
 
 #include "driverlib/eeprom.h"
 #include "driverlib/gpio.h"

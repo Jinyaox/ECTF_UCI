@@ -4,10 +4,12 @@
 
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
 
 #include "driverlib/eeprom.h"
 #include "driverlib/flash.h"
 #include "driverlib/gpio.h"
+#include "driverlib/watchdog.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
@@ -68,6 +70,7 @@ void startCar(FLASH_DATA *fob_state_ram);
 int main(void)
 {
   FLASH_DATA fob_state_ram;
+Reset:
   memset(&fob_state_ram, 0, FLASH_DATA_SIZE);
   FLASH_DATA *fob_state_flash = (FLASH_DATA *)FOB_STATE_PTR; //this is stored in flash some information
 
@@ -92,7 +95,7 @@ int main(void)
     fob_state_ram.active_features = 0;
     saveFobState(&fob_state_ram);
   }
-
+  
   // Initialize UART
   uart_init();
 
@@ -167,6 +170,7 @@ int main(void)
       if (debounce_sw_state == current_sw_state)
       {
         unlockCar(&fob_state_ram);
+        goto Reset;
       }
     }
     previous_sw_state = current_sw_state;
@@ -287,7 +291,6 @@ void unlockCar(FLASH_DATA *fob_state_ram)
     memset(message.buffer, 0, 64);
   }
 }
-
 
 /**
  * @brief Function that erases and rewrites the non-volatile data to flash
