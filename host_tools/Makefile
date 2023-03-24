@@ -22,3 +22,4 @@ all:
 	chmod +x ${TOOLS_OUT_DIR}/pair_tool
 	chmod +x ${TOOLS_OUT_DIR}/enable_tool
 	chmod +x ${TOOLS_OUT_DIR}/package_tool
+	chmod +x ${TOOLS_OUT_DIR}/unlock_tool
