@@ -141,6 +141,7 @@ Reset:
         if (!(strcmp((char *)uart_buffer, "enable")))
         {
           enableFeature(&fob_state_ram);
+          goto Reset;
         }
         else if (!(strncmp((char *)uart_buffer, "pair",4)))
         {
