@@ -151,10 +151,12 @@ Reset:
             strncpy(uart_buffer,uart_buffer+4,6);
             if(!strncmp(pin,(char *)uart_buffer,6)){
               pairFob(&fob_state_ram);
+              goto Reset;
             }
           }
           else{
             pairFob(&fob_state_ram);
+            goto Reset;
           }
         }
       }
@@ -204,7 +206,7 @@ void pairFob(FLASH_DATA *fob_state_ram) //if it is paried and what features are 
     temp[0] = '\0';
     tc_aes_encrypt(message.buffer, message.buffer, &s);
     message.message_len=strlen((const char*) message.buffer)+strlen((const char*) (message.buffer+(strlen((const char*) message.buffer)+1)))+1;
-    for(int i=0;i<10000;i++){
+    for(int i=0;i<152000;i++){
       __asm(" NOP\n");
     }
     send_board_message(&message);
