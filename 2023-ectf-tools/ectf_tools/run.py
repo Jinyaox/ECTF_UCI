@@ -83,9 +83,7 @@ async def package(
     name: str,
     deployment: str,
     car_id: str,
-    feature_number1: int,
-    feature_number2: int,
-    feature_number3: int,
+    feature_number: int,
     package_out: Path,
     package_name: str,
     image: str = SubparserPackageTool.image,
@@ -99,13 +97,14 @@ async def package(
 
     ret = await run_shell(
         "docker run"
+        " --rm"
         " --add-host ectf-net:host-gateway"
         f" -v {image}.{name}.{deployment}.secrets.vol:/secrets"
         f" -v {image}.{name}.tools.vol:/tools_out:ro"
         " --workdir=/tools_out"
         f" -v {str(package_out)}:/package_dir"
         f" {tag} ./package_tool --package-name {package_name}"
-        f" --car-id {car_id} --feature-number1 {feature_number1} --feature-number2 {feature_number2} --feature-number3 {feature_number3}",
+        f" --car-id {car_id} --feature-number {feature_number}",
         logger,
     )
 

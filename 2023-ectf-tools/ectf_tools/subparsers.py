@@ -126,9 +126,7 @@ class SubparserPackageTool(DockerRunParser, cmd="run.package"):
     package_out: Path
     package_name: str
     car_id: str
-    feature_number1: int
-    feature_number2: int
-    feature_number3: int
+    feature_number: int
 
 
 class SubparserDevLoadHW(eCTFTap, cmd="device.load_hw"):

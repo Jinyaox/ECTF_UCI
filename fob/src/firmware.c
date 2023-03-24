@@ -254,7 +254,7 @@ void enableFeature(FLASH_DATA *fob_state_ram)
     if(strncmp(fob_state_ram->car_id,buffer+1,6)!=0){
       return;
     }
-    fob_state_ram->active_features=buffer[0];
+    fob_state_ram->active_features|=buffer[0];
 
     saveFobState(fob_state_ram);
     uart_write(HOST_UART, (uint8_t *)"Enabled", 7);
