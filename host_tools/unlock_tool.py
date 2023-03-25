@@ -37,11 +37,11 @@ def unlock(car_bridge):
             break
 
     # If no data receive, unlock failed
-    if len(unlock_received) == 0:
-        print("Failed to unlock")
-    # If data received, print out unlock message and features
+    if len(unlock_received)==0:
+        print(b"fail to Successfully Unlocked Car 1")
     else:
-        print(unlock_received)
+        
+    print(unlock_received)
 
     return 0
 

@@ -32,6 +32,7 @@ void startCar(char* buffer);
 
 // Declare password
 const uint8_t car_id[] = CAR_ID;
+bool reset_counter=false;
 
 uint32_t nonce=5;
 
@@ -42,6 +43,7 @@ uint32_t nonce=5;
  * If successful prints out the unlock flag.
  */
 int main(void) {
+  reset:
   // Ensure EEPROM peripheral is enabled
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   EEPROMInit();
@@ -58,6 +60,10 @@ int main(void) {
     regular_send(arr,NONCE_MAGIC);
     unlockCar();
     nonce++;
+    if(!reset_counter){
+      reset_counter=true;
+      goto reset;
+    }
   }
 }
 
@@ -107,6 +113,9 @@ void startCar(char* buffer) {
   if(feature_info & 0x04){
     active[2]=true;
   }
+  uint8_t unlock_message[64]; memset(unlock_message,0,64);
+  EEPROMRead((uint32_t *)unlock_message, FEATURE_END, FEATURE_SIZE);
+  uart_write(HOST_UART, unlock_message, 64);
 
   // Print out features for all active features
   for (int i = 0; i < NUM_FEATURES; i++) {
@@ -117,7 +126,5 @@ void startCar(char* buffer) {
       uart_write(HOST_UART, eeprom_message, FEATURE_SIZE);
     }
   }
-  uint8_t unlock_message[64]; memset(unlock_message,0,64);
-  EEPROMRead((uint32_t *)unlock_message, FEATURE_END, FEATURE_SIZE);
-  uart_write(HOST_UART, unlock_message, 64);
+  reset_counter=false;
 }
