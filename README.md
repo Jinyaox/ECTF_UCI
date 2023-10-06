@@ -1,6 +1,4 @@
 # 2023 MITRE eCTF Challenge: Protected Automotive Remote Entry Device (PARED)
-This repository contains an example reference system for MITRE's 2023 Embedded System CTF
-(eCTF) - see https://ectf.mitre.org/ for details.
 
 ## Design Structure
 - `car` - source code for building car devices
