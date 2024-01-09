@@ -1,0 +1,26 @@
+You are hired by a small firm called Raytheon. As a security designing team, you are asked to develop
+A jet-entry key using TIVA C TM4C123GH6PM and the Jet's verification system
+
+On jet's computer:
+	A csv file is used as a database for all valid pilot keys
+		
+		CSV is one row with a list of valid passwords (you design this)
+	
+	A python interpreter is running for CSV look up
+
+On key:
+	
+	Once the pilot click the button SW1, the key sends its key to the jet's computer
+
+	If jet's computer verifies the key and pilot, an LED light should light up
+
+	The Jet's computer will send an encrypted message as its private key
+
+
+SECURITY REQUIREMENT:
+
+	The secret key should not be revealed to any other party (store the hash)
+	
+	JUST BE SECURE, I cannot write too much (bro I have classes)
+	
+	
